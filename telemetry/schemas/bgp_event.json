@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BGP telemetry event",
+  "description": "Canonical telemetry event emitted by the Red Lantern BGP attack-chain simulator. This schema defines the contract between simulated attacks and detection tooling such as Wazuh.",
+  "type": "object",
+  "required": [
+    "event_type",
+    "timestamp",
+    "source",
+    "attributes"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "description": "High-level classification of the event (e.g. bgp.update, bgp.withdraw, routing.anomaly)"
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Simulated time in seconds since scenario start"
+    },
+    "source": {
+      "type": "object",
+      "required": ["feed", "observer"],
+      "properties": {
+        "feed": {
+          "type": "string",
+          "description": "Originating feed or generator (e.g. ris, routeviews, router-syslog, mock)"
+        },
+        "observer": {
+          "type": "string",
+          "description": "Logical observer emitting the event (sensor, collector, router, simulator)"
+        }
+      }
+    },
+    "attributes": {
+      "type": "object",
+      "description": "Event-specific attributes. Contents depend on event_type.",
+      "additionalProperties": true
+    },
+    "scenario": {
+      "type": "object",
+      "description": "Optional scenario metadata",
+      "properties": {
+        "name": { "type": "string" },
+        "phase": { "type": "string" },
+        "attack_step": { "type": "string" }
+      }
+    }
+  }
+}
