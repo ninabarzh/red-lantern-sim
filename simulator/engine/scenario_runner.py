@@ -1,17 +1,12 @@
 """
 Scenario runner for the Red Lantern BGP attack-chain simulator.
 
-This module is deliberately dull. It does not know what an attack is,
-does not attempt to detect anything, and does not care whether events
-are malicious or benign. Its sole responsibility is to:
+Responsibilities:
 
-- Load a scenario definition
-- Advance simulated time
-- Emit events in the correct order
-- Hand those events to the event bus
-
-If you are tempted to add detection logic here, stop. That belongs on
-the blue side of the lanterns.
+- Load a scenario definition from YAML
+- Advance simulated time deterministically
+- Hand events to the EventBus
+- Remain agnostic about attack content
 """
 
 from pathlib import Path
@@ -35,17 +30,27 @@ class ScenarioRunner:
 
     def load(self) -> None:
         """
-        Load the scenario YAML from disk.
+        Load the scenario YAML from disk and validate structure.
         """
         with self.scenario_path.open("r", encoding="utf-8") as fh:
             self.scenario = yaml.safe_load(fh)
 
-        if "timeline" not in self.scenario:
-            raise ValueError("Scenario is missing a timeline section")
+        if not isinstance(self.scenario, dict):
+            raise ValueError("Scenario file must be a YAML mapping (dict)")
 
-    def run(self) -> None:
+        if "timeline" not in self.scenario:
+            raise ValueError("Scenario is missing a 'timeline' section")
+
+        if not isinstance(self.scenario["timeline"], list):
+            raise ValueError("'timeline' must be a list of events")
+
+    def run(self, close_bus: bool = False) -> None:
         """
         Run the scenario from start to finish.
+
+        Args:
+            close_bus: whether to close the EventBus after execution
+                       (use False if running multiple scenarios in one session)
         """
         timeline: List[Dict[str, Any]] = sorted(
             self.scenario.get("timeline", []),
@@ -56,12 +61,21 @@ class ScenarioRunner:
             target_time = entry.get("t", 0)
             self.clock.advance_to(target_time)
 
+            # Wrap event with scenario metadata
             event = {
-                "time": self.clock.now(),
-                "event": entry,
+                "timestamp": self.clock.now(),
                 "scenario_id": self.scenario.get("id"),
+                "entry": entry,
             }
 
             self.event_bus.publish(event)
 
-        self.event_bus.close()
+        if close_bus:
+            self.event_bus.close()
+
+    def reset(self) -> None:
+        """
+        Reset the scenario runner and its clock.
+        """
+        self.clock.reset()
+        # Do not automatically clear event bus; let caller decide

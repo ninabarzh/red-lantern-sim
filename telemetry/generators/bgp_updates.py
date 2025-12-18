@@ -9,7 +9,7 @@ Instead, it emits just enough structure to support realistic detection
 signals and chained attack scenarios.
 """
 
-from typing import Dict, List, Optional
+from typing import Optional, List, Dict
 
 from simulator.engine.clock import SimulationClock
 from simulator.engine.event_bus import EventBus
@@ -50,6 +50,14 @@ class BGPUpdateGenerator:
     ) -> None:
         """
         Emit a BGP UPDATE event.
+
+        :param prefix: The announced IP prefix (e.g., '203.0.113.0/24')
+        :param as_path: List of AS numbers forming the AS_PATH
+        :param origin_as: Originating AS number
+        :param next_hop: Next hop IP address
+        :param local_pref: Optional local preference
+        :param med: Optional MED attribute
+        :param attack_step: Optional step name for scenario tracking
         """
         attributes: Dict[str, object] = {
             "prefix": prefix,
@@ -60,25 +68,18 @@ class BGPUpdateGenerator:
 
         if local_pref is not None:
             attributes["local_pref"] = local_pref
-
         if med is not None:
             attributes["med"] = med
 
-        event = {
+        event: Dict[str, object] = {
             "event_type": "bgp.update",
             "timestamp": self.clock.now(),
-            "source": {
-                "feed": self.feed,
-                "observer": self.observer,
-            },
+            "source": {"feed": self.feed, "observer": self.observer},
             "attributes": attributes,
         }
 
         if self.scenario_name or attack_step:
-            event["scenario"] = {
-                "name": self.scenario_name,
-                "attack_step": attack_step,
-            }
+            event["scenario"] = {"name": self.scenario_name, "attack_step": attack_step}
 
         self.event_bus.publish(event)
 
@@ -90,24 +91,24 @@ class BGPUpdateGenerator:
     ) -> None:
         """
         Emit a BGP WITHDRAW event.
+
+        :param prefix: The withdrawn IP prefix
+        :param withdrawn_by_as: AS number withdrawing the route
+        :param attack_step: Optional step name for scenario tracking
         """
-        event = {
+        attributes: Dict[str, object] = {
+            "prefix": prefix,
+            "withdrawn_by_as": withdrawn_by_as,
+        }
+
+        event: Dict[str, object] = {
             "event_type": "bgp.withdraw",
             "timestamp": self.clock.now(),
-            "source": {
-                "feed": self.feed,
-                "observer": self.observer,
-            },
-            "attributes": {
-                "prefix": prefix,
-                "withdrawn_by_as": withdrawn_by_as,
-            },
+            "source": {"feed": self.feed, "observer": self.observer},
+            "attributes": attributes,
         }
 
         if self.scenario_name or attack_step:
-            event["scenario"] = {
-                "name": self.scenario_name,
-                "attack_step": attack_step,
-            }
+            event["scenario"] = {"name": self.scenario_name, "attack_step": attack_step}
 
         self.event_bus.publish(event)
