@@ -1,0 +1,21 @@
+id: fat-finger-hijack
+description: >
+  Accidental-looking BGP misorigin where a legitimate AS announces
+  the exact prefix of another AS, causing short-lived disruption.
+
+timeline:
+  - t: 0
+    action: start
+
+  - t: 10
+    action: announce
+    prefix: 203.0.113.0/24
+    attacker_as: 65002
+    victim_as: 65001
+    note: "Exact-prefix announcement, looks like operator error"
+
+  - t: 120
+    action: withdraw
+    prefix: 203.0.113.0/24
+    attacker_as: 65002
+    note: "Route withdrawn after brief impact"
