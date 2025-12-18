@@ -34,6 +34,16 @@ def register(event_bus, clock, scenario_name: str) -> None:
         action = entry.get("action")
 
         if action == "announce":
+            # --- Informational, boring, realistic ---
+            syslog_gen.emit(
+                severity="info",
+                message=f"BGP route {entry['prefix']} added to RIB",
+                subsystem="bgp",
+                peer_ip="192.0.2.1",
+                attack_step="misorigin",
+            )
+
+            # --- First propagation path ---
             bgp_gen.emit_update(
                 prefix=entry["prefix"],
                 as_path=[entry["attacker_as"]],
@@ -42,6 +52,16 @@ def register(event_bus, clock, scenario_name: str) -> None:
                 attack_step="misorigin",
             )
 
+            # --- Second peer: partial propagation ---
+            bgp_gen.emit_update(
+                prefix=entry["prefix"],
+                as_path=[65003, entry["attacker_as"]],
+                origin_as=entry["attacker_as"],
+                next_hop="198.51.100.1",
+                attack_step="misorigin",
+            )
+
+            # --- Mild control-plane noise ---
             syslog_gen.bgp_session_reset(
                 peer_ip="192.0.2.1",
                 reason="BGP table change detected",
@@ -49,12 +69,25 @@ def register(event_bus, clock, scenario_name: str) -> None:
             )
 
         elif action == "withdraw":
+            # --- Withdraw BGP route ---
             bgp_gen.emit_withdraw(
                 prefix=entry["prefix"],
                 withdrawn_by_as=entry["attacker_as"],
                 attack_step="withdrawal",
             )
 
+            # --- Informational withdrawal with duration ---
+            duration = entry.get("duration_seconds")
+            suffix = f" after {duration}s" if duration else ""
+            syslog_gen.emit(
+                severity="info",
+                message=f"BGP route {entry['prefix']} withdrawn{suffix}",
+                subsystem="bgp",
+                peer_ip="192.0.2.1",
+                attack_step="withdrawal",
+            )
+
+            # --- Error for prefix limit exceeded remains ---
             syslog_gen.prefix_limit_exceeded(
                 peer_ip="192.0.2.1",
                 limit=100,

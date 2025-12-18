@@ -50,7 +50,7 @@ class RouterSyslogGenerator:
         attack_step: Optional[str] = None,
     ) -> None:
         """
-        Emit a raw syslog-style message.
+        Emit a syslog-style message. Produces the same structure as helper methods.
         """
         attributes: Dict[str, object] = {
             "router": self.router_name,
@@ -67,10 +67,8 @@ class RouterSyslogGenerator:
             "timestamp": self.clock.now(),
             "source": {"feed": self.feed, "observer": self.observer},
             "attributes": attributes,
+            "scenario": {"name": self.scenario_name, "attack_step": attack_step},
         }
-
-        if self.scenario_name or attack_step:
-            event["scenario"] = {"name": self.scenario_name, "attack_step": attack_step}
 
         self.event_bus.publish(event)
 

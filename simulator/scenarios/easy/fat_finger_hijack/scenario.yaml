@@ -18,4 +18,5 @@ timeline:
     action: withdraw
     prefix: 203.0.113.0/24
     attacker_as: 65002
+    duration_seconds: 110
     note: "Route withdrawn after brief impact"

@@ -4,15 +4,12 @@ Command-line interface for the Red Lantern BGP attack-chain simulator.
 
 import argparse
 import sys
+import importlib.util
 from pathlib import Path
 from typing import Any
 
 from simulator.engine.event_bus import EventBus
 from simulator.engine.scenario_runner import ScenarioRunner
-
-from telemetry.generators.bgp_updates import BGPUpdateGenerator
-from telemetry.generators.router_syslog import RouterSyslogGenerator
-from telemetry.generators.latency_metrics import LatencyMetricsGenerator
 
 
 def print_event(event: dict[str, Any]) -> None:
@@ -30,6 +27,42 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the scenario YAML file",
     )
     return parser
+
+
+def load_scenario_telemetry(
+    scenario_path: Path,
+    event_bus: EventBus,
+    clock,
+    scenario_id: str,
+) -> None:
+    """
+    Load and register scenario-specific telemetry if telemetry.py exists
+    alongside the scenario.yaml.
+    """
+    telemetry_path = scenario_path.parent / "telemetry.py"
+    if not telemetry_path.exists():
+        return
+
+    spec = importlib.util.spec_from_file_location(
+        f"{scenario_id}_telemetry",
+        telemetry_path,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load telemetry module from {telemetry_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    if not hasattr(module, "register"):
+        raise RuntimeError(
+            f"{telemetry_path} does not define a register(event_bus, clock, scenario_name)"
+        )
+
+    module.register(
+        event_bus=event_bus,
+        clock=clock,
+        scenario_name=scenario_id,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -58,69 +91,21 @@ def main(argv: list[str] | None = None) -> int:
 
     # ---- Scenario identity (single source of truth) ----
     scenario_id = runner.scenario.get("id")
+    if not scenario_id:
+        print("Scenario has no id field", file=sys.stderr)
+        return 2
 
-    # ---- Telemetry generators (shared clock & bus) ----
-    bgp_gen = BGPUpdateGenerator(
-        clock=runner.clock,
-        event_bus=event_bus,
-        scenario_name=scenario_id,
-    )
-
-    syslog_gen = RouterSyslogGenerator(
-        clock=runner.clock,
-        event_bus=event_bus,
-        router_name="R1",
-        scenario_name=scenario_id,
-    )
-
-    latency_gen = LatencyMetricsGenerator(
-        clock=runner.clock,
-        event_bus=event_bus,
-        scenario_name=scenario_id,
-    )
-
-    # ---- Scenario → telemetry translation layer ----
-    def telemetry_listener(event: dict[str, Any]) -> None:
-        entry = event.get("entry", {})
-        action = entry.get("action")
-
-        if action == "announce":
-            bgp_gen.emit_update(
-                prefix=entry["prefix"],
-                as_path=[65001, 65002],
-                origin_as=65002,
-                next_hop="192.0.2.1",
-                attack_step="announce",
-            )
-            syslog_gen.bgp_session_reset(
-                peer_ip="192.0.2.1",
-                reason="session flapped",
-                attack_step="announce",
-            )
-
-        elif action == "withdraw":
-            bgp_gen.emit_withdraw(
-                prefix=entry["prefix"],
-                withdrawn_by_as=65002,
-                attack_step="withdraw",
-            )
-            syslog_gen.prefix_limit_exceeded(
-                peer_ip="192.0.2.1",
-                limit=100,
-                attack_step="withdraw",
-            )
-
-        elif action == "latency_spike":
-            latency_gen.emit(
-                source_router="R1",
-                target_router="R2",
-                latency_ms=150.0,
-                jitter_ms=15.0,
-                packet_loss_pct=0.1,
-                attack_step="latency_spike",
-            )
-
-    event_bus.subscribe(telemetry_listener)
+    # ---- Load scenario-specific telemetry (THIS IS THE FIX) ----
+    try:
+        load_scenario_telemetry(
+            scenario_path=scenario_path,
+            event_bus=event_bus,
+            clock=runner.clock,
+            scenario_id=scenario_id,
+        )
+    except Exception as exc:
+        print(f"Failed to load scenario telemetry: {exc}", file=sys.stderr)
+        return 2
 
     try:
         runner.run()
