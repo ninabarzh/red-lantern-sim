@@ -1,110 +1,88 @@
+# telemetry/generators/router_syslog.py
 """
-Router syslog telemetry generator.
+Router syslog generator for Red Lantern simulator.
 
-This module emits intentionally messy, human-shaped syslog messages that
-approximate what real routers tend to produce during routing incidents.
-These events complement structured BGP updates and exist primarily to
-exercise log-based detection and correlation rules in Wazuh.
-
-Accuracy is sacrificed in favour of realism. If it looks plausible to an
-on-call engineer at 03:00, it is good enough.
+Generates syslog events related to BGP, such as session resets and prefix limits.
+Supports optional structured scenario metadata for future-proofing.
 """
 
-from typing import Optional, Dict
-
+from typing import Any, Dict
 from simulator.engine.clock import SimulationClock
 from simulator.engine.event_bus import EventBus
 
 
 class RouterSyslogGenerator:
-    """
-    Generator for router-style syslog messages.
+    def __init__(self, clock: SimulationClock, event_bus: EventBus, router_name: str, scenario_name: str):
+        """
+        Initialize the generator.
 
-    Messages are emitted as generic telemetry events with free-form
-    attributes. Downstream tooling is expected to parse, normalise, and
-    occasionally misinterpret them.
-    """
-
-    def __init__(
-        self,
-        clock: SimulationClock,
-        event_bus: EventBus,
-        router_name: str,
-        feed: str = "router-syslog",
-        observer: str = "router",
-        scenario_name: Optional[str] = None,
-    ) -> None:
+        Args:
+            clock: Shared simulation clock.
+            event_bus: Shared event bus.
+            router_name: Name of the router emitting logs.
+            scenario_name: Scenario name for correlation.
+        """
         self.clock = clock
         self.event_bus = event_bus
         self.router_name = router_name
-        self.feed = feed
-        self.observer = observer
         self.scenario_name = scenario_name
 
-    def emit(
-        self,
-        severity: str,
-        message: str,
-        subsystem: Optional[str] = None,
-        peer_ip: Optional[str] = None,
-        attack_step: Optional[str] = None,
-    ) -> None:
+    def emit(self, message: str, severity: str = "info", subsystem: str | None = None, peer_ip: str | None = None, scenario: Dict[str, Any] | None = None):
         """
-        Emit a syslog-style message. Produces the same structure as helper methods.
-        """
-        attributes: Dict[str, object] = {
-            "router": self.router_name,
-            "severity": severity,
-            "message": message,
-        }
-        if subsystem:
-            attributes["subsystem"] = subsystem
-        if peer_ip:
-            attributes["peer_ip"] = peer_ip
+        Emit a generic syslog event.
 
-        event: Dict[str, object] = {
+        Args:
+            message: Log message.
+            severity: syslog severity (info, notice, warning, error).
+            subsystem: Optional subsystem name (e.g., bgp).
+            peer_ip: Optional peer IP for BGP messages.
+            scenario: Optional structured metadata (attack_step, incident_id, etc.)
+        """
+        event = {
             "event_type": "router.syslog",
             "timestamp": self.clock.now(),
-            "source": {"feed": self.feed, "observer": self.observer},
-            "attributes": attributes,
-            "scenario": {"name": self.scenario_name, "attack_step": attack_step},
+            "source": {"feed": "router-syslog", "observer": "router"},
+            "attributes": {
+                "router": self.router_name,
+                "severity": severity,
+                "message": message,
+                "subsystem": subsystem,
+                "peer_ip": peer_ip,
+            },
+            "scenario": scenario or {"name": self.scenario_name, "attack_step": None, "incident_id": None}
         }
-
         self.event_bus.publish(event)
 
-    # Convenience helpers
-
-    def bgp_session_reset(self, peer_ip: str, reason: str, attack_step: Optional[str] = None) -> None:
+    def prefix_limit_exceeded(self, peer_ip: str, limit: int, scenario: Dict[str, Any] | None = None):
         """
-        Emit a warning that a BGP session has been reset.
+        Emit an ERROR for exceeding prefix limit.
+
+        Args:
+            peer_ip: Peer that exceeded the limit.
+            limit: Prefix limit configured.
+            scenario: Optional structured metadata.
         """
         self.emit(
-            severity="warning",
-            message=f"BGP session to {peer_ip} reset: {reason}",
-            subsystem="bgp",
-            peer_ip=peer_ip,
-            attack_step=attack_step,
-        )
-
-    def prefix_limit_exceeded(self, peer_ip: str, limit: int, attack_step: Optional[str] = None) -> None:
-        """
-        Emit an error indicating a prefix limit exceeded condition.
-        """
-        self.emit(
-            severity="error",
             message=f"Prefix limit {limit} exceeded from neighbour {peer_ip}",
+            severity="error",
             subsystem="bgp",
             peer_ip=peer_ip,
-            attack_step=attack_step,
+            scenario=scenario
         )
 
-    def configuration_change(self, user: str, change_summary: str, attack_step: Optional[str] = None) -> None:
+    def bgp_session_reset(self, peer_ip: str, reason: str, scenario: Dict[str, Any] | None = None):
         """
-        Emit an informational event describing a configuration change.
+        Emit a WARNING for BGP session reset.
+
+        Args:
+            peer_ip: Peer whose session reset.
+            reason: Reason for reset.
+            scenario: Optional structured metadata.
         """
         self.emit(
-            severity="info",
-            message=f"Configuration change by {user}: {change_summary}",
-            subsystem="config",
-            attack_step=attack_step,
+            message=f"BGP session to {peer_ip} reset: {reason}",
+            severity="warning",
+            subsystem="bgp",
+            peer_ip=peer_ip,
+            scenario=scenario
         )

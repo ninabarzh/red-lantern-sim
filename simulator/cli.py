@@ -7,6 +7,8 @@ import sys
 import importlib.util
 from pathlib import Path
 from typing import Any
+import socket
+import json
 
 from simulator.engine.event_bus import EventBus
 from simulator.engine.scenario_runner import ScenarioRunner
@@ -15,6 +17,11 @@ from simulator.engine.scenario_runner import ScenarioRunner
 def print_event(event: dict[str, Any]) -> None:
     """Default event handler: dump everything to stdout."""
     print(event)
+
+# def send_to_wazuh(event):
+#     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#     sock.sendto(json.dumps(event).encode(), ("localhost", 1514))
+#     sock.close()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     event_bus = EventBus()
-    event_bus.subscribe(print_event)
+    event_bus.subscribe(send_to_wazuh)
 
     runner = ScenarioRunner(
         scenario_path=scenario_path,

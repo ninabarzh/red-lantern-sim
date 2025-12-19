@@ -1,39 +1,28 @@
+# telemetry/generators/latency_metrics.py
 """
-Latency metrics telemetry generator.
+Latency metrics generator for Red Lantern simulator.
 
-This module emits simulated latency and jitter measurements for
-router-to-router or router-to-peer paths. The metrics are intended
-to complement BGP updates and syslog messages for detection and
-analysis scenarios.
+Generates synthetic latency/jitter/packet loss events between routers.
+Supports optional structured scenario metadata for correlation.
 """
 
-from typing import Optional, Dict
-
+from typing import Any, Dict
 from simulator.engine.clock import SimulationClock
 from simulator.engine.event_bus import EventBus
 
 
 class LatencyMetricsGenerator:
-    """
-    Generator for latency-style telemetry events.
+    def __init__(self, clock: SimulationClock, event_bus: EventBus, scenario_name: str):
+        """
+        Initialize the generator.
 
-    Each emitted event is a simple dictionary compatible with the
-    event bus. Values are deliberately approximate and sufficient
-    for detection exercises.
-    """
-
-    def __init__(
-        self,
-        clock: SimulationClock,
-        event_bus: EventBus,
-        feed: str = "latency-metrics",
-        observer: str = "simulator",
-        scenario_name: Optional[str] = None,
-    ) -> None:
+        Args:
+            clock: Shared simulation clock.
+            event_bus: Shared event bus.
+            scenario_name: Scenario name for correlation.
+        """
         self.clock = clock
         self.event_bus = event_bus
-        self.feed = feed
-        self.observer = observer
         self.scenario_name = scenario_name
 
     def emit(
@@ -41,39 +30,32 @@ class LatencyMetricsGenerator:
         source_router: str,
         target_router: str,
         latency_ms: float,
-        jitter_ms: Optional[float] = None,
-        packet_loss_pct: Optional[float] = None,
-        attack_step: Optional[str] = None,
-    ) -> None:
+        jitter_ms: float,
+        packet_loss_pct: float,
+        scenario: Dict[str, Any] | None = None
+    ):
         """
-        Emit a latency metric event.
+        Emit a synthetic latency metrics event.
 
-        :param source_router: Originating router name
-        :param target_router: Destination router name
-        :param latency_ms: Measured latency in milliseconds
-        :param jitter_ms: Optional jitter in milliseconds
-        :param packet_loss_pct: Optional packet loss percentage
-        :param attack_step: Optional scenario step for metadata
+        Args:
+            source_router: Name of source router.
+            target_router: Name of target router.
+            latency_ms: Observed latency in milliseconds.
+            jitter_ms: Observed jitter in milliseconds.
+            packet_loss_pct: Observed packet loss percentage.
+            scenario: Optional structured scenario metadata.
         """
-        attributes: Dict[str, object] = {
-            "source_router": source_router,
-            "target_router": target_router,
-            "latency_ms": latency_ms,
-        }
-
-        if jitter_ms is not None:
-            attributes["jitter_ms"] = jitter_ms
-        if packet_loss_pct is not None:
-            attributes["packet_loss_pct"] = packet_loss_pct
-
-        event: Dict[str, object] = {
-            "event_type": "network.latency",
+        event = {
+            "event_type": "latency.metrics",
             "timestamp": self.clock.now(),
-            "source": {"feed": self.feed, "observer": self.observer},
-            "attributes": attributes,
+            "source": {"feed": "mock", "observer": "simulator"},
+            "attributes": {
+                "source_router": source_router,
+                "target_router": target_router,
+                "latency_ms": latency_ms,
+                "jitter_ms": jitter_ms,
+                "packet_loss_pct": packet_loss_pct,
+            },
+            "scenario": scenario or {"name": self.scenario_name, "attack_step": None, "incident_id": None}
         }
-
-        if self.scenario_name or attack_step:
-            event["scenario"] = {"name": self.scenario_name, "attack_step": attack_step}
-
         self.event_bus.publish(event)
