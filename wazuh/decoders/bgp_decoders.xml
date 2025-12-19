@@ -1,0 +1,160 @@
+<!--
+  BGP Telemetry Decoders for Wazuh
+
+  These decoders parse JSON telemetry from the Red Lantern simulator
+  and extract fields for rule matching and correlation.
+-->
+
+<decoders>
+  <decoder name="json">
+    <prematch>^\s*{</prematch>
+  </decoder>
+
+  <!-- Base BGP event decoder -->
+  <decoder name="bgp-telemetry">
+    <parent>json</parent>
+    <use_own_name>true</use_own_name>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+  </decoder>
+
+  <!-- BGP UPDATE decoder -->
+  <decoder name="bgp-update">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"bgp\.update"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.prefix">prefix</field>
+    <field name="attributes.origin_as">origin_as</field>
+    <field name="attributes.next_hop">next_hop</field>
+  </decoder>
+
+  <!-- BGP WITHDRAW decoder -->
+  <decoder name="bgp-withdraw">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"bgp\.withdraw"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.prefix">prefix</field>
+    <field name="attributes.withdrawn_by_as">withdrawn_by_as</field>
+  </decoder>
+
+  <!-- Router syslog decoder -->
+  <decoder name="router-syslog">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"router\.syslog"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.router">router</field>
+    <field name="attributes.severity">severity</field>
+    <field name="attributes.message">message</field>
+    <field name="attributes.subsystem">subsystem</field>
+    <field name="attributes.peer_ip">peer_ip</field>
+  </decoder>
+
+  <!-- Latency metrics decoder -->
+  <decoder name="latency-metrics">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"network\.latency"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.source_router">source_router</field>
+    <field name="attributes.target_router">target_router</field>
+    <field name="attributes.latency_ms">latency_ms</field>
+    <field name="attributes.jitter_ms">jitter_ms</field>
+    <field name="attributes.packet_loss_pct">packet_loss_pct</field>
+  </decoder>
+
+  <!-- RPKI validation decoder -->
+  <decoder name="rpki-validation">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"rpki\.validation"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.prefix">prefix</field>
+    <field name="attributes.origin_as">origin_as</field>
+    <field name="attributes.validation_state">validation_state</field>
+  </decoder>
+
+  <!-- RPKI ROA change decoder -->
+  <decoder name="rpki-roa-change">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"rpki\.roa_change"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.change_type">change_type</field>
+    <field name="attributes.prefix">prefix</field>
+    <field name="attributes.origin_as">origin_as</field>
+    <field name="attributes.actor">actor</field>
+  </decoder>
+
+  <!-- RPKI state change decoder -->
+  <decoder name="rpki-state-change">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"rpki\.state_change"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.prefix">prefix</field>
+    <field name="attributes.origin_as">origin_as</field>
+    <field name="attributes.previous_state">previous_state</field>
+    <field name="attributes.current_state">current_state</field>
+  </decoder>
+
+  <!-- Access/login decoder -->
+  <decoder name="access-login">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"access\.login"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.user">user</field>
+    <field name="attributes.source_ip">source_ip</field>
+    <field name="attributes.location">location</field>
+    <field name="attributes.system">system</field>
+    <field name="attributes.suspicious">suspicious</field>
+  </decoder>
+
+  <!-- Configuration commit decoder -->
+  <decoder name="config-commit">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"config\.commit"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.user">user</field>
+    <field name="attributes.commit_hash">commit_hash</field>
+    <field name="attributes.message">message</field>
+  </decoder>
+
+  <!-- BGP community decoder -->
+  <decoder name="bgp-community">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"bgp\.community_detected"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.prefix">prefix</field>
+    <field name="attributes.community">community</field>
+    <field name="attributes.origin_as">origin_as</field>
+    <field name="attributes.community_name">community_name</field>
+  </decoder>
+
+  <!-- BGP flap decoder -->
+  <decoder name="bgp-flap">
+    <parent>bgp-telemetry</parent>
+    <prematch>"event_type"\s*:\s*"bgp\.flap_detected"</prematch>
+    <plugin_decoder>JSON_Decoder</plugin_decoder>
+    <field name="event_type">event_type</field>
+    <field name="timestamp">timestamp</field>
+    <field name="attributes.flap_count">flap_count</field>
+    <field name="attributes.pattern">pattern</field>
+  </decoder>
+</decoders>
+
+
