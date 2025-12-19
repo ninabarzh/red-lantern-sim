@@ -1,0 +1,190 @@
+<!--
+  Signal Three: Control-Plane Poisoning Detection Rules
+
+  Detects attacks on routing infrastructure itself: ROA manipulation,
+  policy changes, access anomalies, and coordinated network impact.
+
+  Rule Range: 100021-100040
+-->
+
+<group name="bgp,signal_three,control_plane,">
+
+  <!-- === RPKI & ROA Events === -->
+
+  <!-- RPKI validation event (baseline) -->
+  <rule id="100021" level="0">
+    <field name="event_type">^rpki\.</field>
+    <description>RPKI event</description>
+    <group>rpki_event,</group>
+  </rule>
+
+  <!-- ROA change detected -->
+  <rule id="100022" level="7">
+    <if_sid>100021</if_sid>
+    <field name="event_type">^rpki\.roa_change$</field>
+    <description>ROA change: $(attributes.change_type) for $(attributes.prefix)</description>
+    <group>roa_change,</group>
+  </rule>
+
+  <!-- ROA deleted -->
+  <rule id="100023" level="10">
+    <if_sid>100022</if_sid>
+    <field name="attributes.change_type">removed</field>
+    <description>ROA DELETED: $(attributes.prefix) by $(attributes.actor)</description>
+    <group>roa_deleted,suspicious,</group>
+  </rule>
+
+  <!-- RPKI state change -->
+  <rule id="100024" level="6">
+    <if_sid>100021</if_sid>
+    <field name="event_type">^rpki\.state_change$</field>
+    <description>RPKI state change: $(attributes.prefix) $(attributes.previous_state) → $(attributes.current_state)</description>
+    <group>rpki_state_change,</group>
+  </rule>
+
+  <!-- RPKI state flip (valid → invalid/not-found) -->
+  <rule id="100025" level="11">
+    <if_sid>100024</if_sid>
+    <field name="attributes.previous_state">valid</field>
+    <field name="attributes.current_state">invalid|not_found</field>
+    <description>CRITICAL: RPKI state flip $(attributes.prefix): valid → $(attributes.current_state)</description>
+    <group>rpki_state_flip,attack,</group>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- === Access & Authentication === -->
+
+  <!-- Access event (baseline) -->
+  <rule id="100026" level="0">
+    <field name="event_type">^access\.</field>
+    <description>Access event</description>
+    <group>access_event,</group>
+  </rule>
+
+  <!-- Login to routing system -->
+  <rule id="100027" level="3">
+    <if_sid>100026</if_sid>
+    <field name="event_type">^access\.login$</field>
+    <description>Login: $(attributes.user) to $(attributes.system)</description>
+    <group>routing_access,</group>
+  </rule>
+
+  <!-- Suspicious login -->
+  <rule id="100028" level="8">
+    <if_sid>100027</if_sid>
+    <field name="attributes.suspicious">true</field>
+    <description>Suspicious login: $(attributes.user) from $(attributes.source_ip) ($(attributes.location))</description>
+    <group>routing_access_suspicious,suspicious,</group>
+  </rule>
+
+  <!-- Login from high-risk location -->
+  <rule id="100029" level="9">
+    <if_sid>100028</if_sid>
+    <field name="attributes.location">RU|CN|KP|IR</field>
+    <description>High-risk login: $(attributes.user) from $(attributes.location)</description>
+    <group>routing_access_highrisk,attack,</group>
+  </rule>
+
+  <!-- === Configuration & Policy === -->
+
+  <!-- Configuration commit -->
+  <rule id="100030" level="4">
+    <field name="event_type">^config\.commit$</field>
+    <description>Config commit: $(attributes.commit_hash) by $(attributes.user)</description>
+    <group>config_change,</group>
+  </rule>
+
+  <!-- BGP policy change -->
+  <rule id="100031" level="6">
+    <if_sid>100030</if_sid>
+    <match>bgp|routing|peer</match>
+    <description>BGP policy change: $(attributes.message) by $(attributes.user)</description>
+    <group>policy_change,</group>
+  </rule>
+
+  <!-- Router configuration change (syslog) -->
+  <rule id="100032" level="5">
+    <if_sid>100006</if_sid>
+    <match>Configuration change|config.*by</match>
+    <description>Router config change: $(attributes.message)</description>
+    <group>router_config_change,</group>
+  </rule>
+
+  <!-- === BGP Communities & Attacks === -->
+
+  <!-- BGP community detected -->
+  <rule id="100033" level="5">
+    <field name="event_type">^bgp\.community_detected$</field>
+    <description>BGP community: $(attributes.community) on $(attributes.prefix)</description>
+    <group>bgp_community,</group>
+  </rule>
+
+  <!-- Blackhole community (RFC 7999) -->
+  <rule id="100034" level="10">
+    <if_sid>100033</if_sid>
+    <field name="attributes.community">65535:666</field>
+    <description>BLACKHOLE community detected: $(attributes.prefix) from AS$(attributes.origin_as)</description>
+    <group>bgp_blackhole,attack,</group>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- Route flapping detected -->
+  <rule id="100035" level="7">
+    <field name="event_type">^bgp\.flap_detected$</field>
+    <description>Route flapping: $(attributes.flap_count) flaps detected</description>
+    <group>bgp_flap,</group>
+  </rule>
+
+  <!-- Coordinated flapping (multiple prefixes) -->
+  <rule id="100036" level="9">
+    <if_sid>100035</if_sid>
+    <field name="attributes.pattern">coordinated</field>
+    <description>Coordinated route flapping: $(attributes.flap_count) flaps across multiple prefixes</description>
+    <group>bgp_flap_coordinated,attack,</group>
+  </rule>
+
+  <!-- === COMPOSITE DETECTION === -->
+
+  <!--
+    CRITICAL: Multi-stage control-plane attack
+    Requires correlation of:
+    - Suspicious access (100028/100029)
+    - ROA/policy change (100023/100031)
+    - Network impact (100025/100034/100036)
+  -->
+  <rule id="100037" level="15" frequency="3" timeframe="3600">
+    <if_matched_sid>100028</if_matched_sid>
+    <if_matched_sid>100023</if_matched_sid>
+    <if_matched_sid>100025</if_matched_sid>
+    <description>CRITICAL: Multi-stage control-plane attack detected</description>
+    <group>control_plane_attack,apt,critical,</group>
+    <options>alert_by_email,no_log</options>
+  </rule>
+
+  <!-- Alternative composite: Access + Policy + Blackhole -->
+  <rule id="100038" level="14" frequency="3" timeframe="1800">
+    <if_matched_sid>100028</if_matched_sid>
+    <if_matched_sid>100031</if_matched_sid>
+    <if_matched_sid>100034</if_matched_sid>
+    <description>Control-plane compromise: Access + Policy + Network attack</description>
+    <group>control_plane_attack,attack,</group>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- ROA manipulation chain -->
+  <rule id="100039" level="12" frequency="2" timeframe="600">
+    <if_matched_sid>100023</if_matched_sid>
+    <if_matched_sid>100025</if_matched_sid>
+    <description>ROA manipulation chain: Deletion followed by state flip</description>
+    <group>roa_manipulation,attack,</group>
+  </rule>
+
+  <!-- Flapping as cover for other attacks -->
+  <rule id="100040" level="11" frequency="2" timeframe="300">
+    <if_matched_sid>100036</if_matched_sid>
+    <if_matched_sid>100034</if_matched_sid>
+    <description>Attack masking: Flapping concurrent with blackhole</description>
+    <group>attack_masking,sophisticated,</group>
+  </rule>
+
+</group>
