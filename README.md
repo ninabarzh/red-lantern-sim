@@ -50,11 +50,7 @@ Those JSON events are the only output.
 
 ## Scenarios
 
-Scenarios live under:
-
-```
-simulator/scenarios/
-```
+Scenarios live under [simulator/scenarios/](simulator/scenarios).
 
 Each scenario consists of:
 
@@ -144,11 +140,7 @@ Use Filebeat JSON input pointing at the simulator output.
 
 ### 3. Wazuh decoders
 
-Custom decoders live under:
-
-```
-wazuh/decoders/
-```
+Custom decoders live under [wazuh/decoders/](wazuh/decoders).
 
 Example:
 
@@ -164,11 +156,7 @@ They assume structured JSON, not regex soup.
 
 ### 4. Wazuh rules (signals)
 
-Rules live under:
-
-```
-wazuh/rules/
-```
+Rules live under [wazuh/rules/](wazuh/rules).
 
 Example signals:
 
@@ -192,7 +180,7 @@ This is the point.
 
 ## Feeds
 
-The simulator includes a `feeds/` directory to model external context, such as:
+The simulator includes a [feeds directory](simulator/feeds) to model external context, such as:
 
 * BGP collectors (RIS, RouteViews)
 * Change management databases
