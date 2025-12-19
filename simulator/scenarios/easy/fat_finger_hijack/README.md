@@ -1,53 +1,23 @@
-# Fat-finger hijack
+# Fat Finger Hijack
 
-## What this scenario models
+## What this scenario represents
 
-A common, low-sophistication BGP incident where a legitimate AS accidentally announces the exact prefix of another AS.
+A classic human mistake in BGP configuration: an operator accidentally announces someone else’s prefix as their own.
 
-- No interception.
-- No nation-state.
-- No cleverness.
+## What is being simulated
 
-Just entropy and missing controls.
+- Mis-origin BGP announcements
+- Route propagation to peers
+- Automated prefix limit alerts
+- Quick withdrawal once the mistake is noticed
+- Minimal impact, short-lived route hijack
 
-This happens multiple times per year on the real Internet.
+## Detections and signals exercised
 
-## Threat model reality
-
-Attacker capability:
-
-- Legitimate AS with upstream connectivity
-- No RPKI enforcement by peers
-- Prefix filters missing or outdated
-
-Defensive posture:
-
-- Relies on upstream filtering
-- Monitoring is reactive
-- Detection often comes from social media
-
-## Attack chain
-
-1. Attacker already peers with one or more transit providers
-2. Exact-prefix announcement is made (looks like a mistake)
-3. Some upstreams accept the route
-4. Traffic is blackholed or partially rerouted
-5. Route is withdrawn after a short period
-
-Plausible deniability achieved.
-
-## What telemetry is generated
-
-This scenario produces mocked but realistic signals:
-
-- BGP UPDATE with unexpected origin AS
-- Short-lived route visibility
-- Router syslog messages indicating control-plane churn
-
-These signals are suitable for:
-- Wazuh ingestion
-- SOC detection exercises
-- Purple-team walkthroughs
+- `bgp.update` events with unusual origin AS
+- Router syslogs showing route addition and withdrawal
+- Prefix-limit warnings (`router.syslog` severity `error`)
+- Timing correlation: short duration anomalies
 
 ## How to run
 
@@ -57,13 +27,6 @@ From the repository root:
 python -m simulator.cli simulator/scenarios/easy/fat_finger_hijack/scenario.yaml
 ```
 
-You should see:
-
-- Scenario events (timeline)
-- Derived BGP telemetry
-- Router syslog messages
-
-All tagged with scenario name and attack step.
 
 
 
