@@ -86,3 +86,21 @@ class RouterSyslogGenerator:
             peer_ip=peer_ip,
             scenario=scenario
         )
+
+    def configuration_change(self, user: str, change_summary: str, attack_step: str | None = None):
+        """
+        Emit a syslog for configuration changes.
+
+        Args:
+            user: Who made the change.
+            change_summary: Short description of the change.
+            attack_step: Optional scenario attack step.
+        """
+        message = f"Configuration change by {user}: {change_summary}"
+        self.emit(
+            message=message,
+            severity="notice",
+            subsystem="config",
+            scenario={"name": self.scenario_name, "attack_step": attack_step}
+        )
+

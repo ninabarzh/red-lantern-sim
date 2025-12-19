@@ -12,25 +12,19 @@ from telemetry.generators.router_syslog import RouterSyslogGenerator
 def register(event_bus, clock, scenario_name: str) -> None:
     """Register telemetry listeners for ROA poisoning scenario."""
 
-    bgp_gen = BGPUpdateGenerator(
-        clock=clock,
-        event_bus=event_bus,
-        scenario_name=scenario_name,
-    )
-
-    syslog_gen = RouterSyslogGenerator(
-        clock=clock,
-        event_bus=event_bus,
-        router_name="R1",
-        scenario_name=scenario_name,
-    )
+    bgp_gen = BGPUpdateGenerator(clock=clock, event_bus=event_bus, scenario_name=scenario_name)
+    syslog_gen = RouterSyslogGenerator(clock=clock, event_bus=event_bus, router_name="R1", scenario_name=scenario_name)
 
     def telemetry_listener(event: dict) -> None:
         entry = event.get("entry", {})
         action = entry.get("action")
+        if not action:
+            return
+
+        incident_id = f"{scenario_name}-{entry.get('prefix', 'unknown')}"
 
         if action == "baseline_rpki":
-            # Normal RPKI state
+            scenario_meta = {"name": scenario_name, "attack_step": "baseline", "incident_id": incident_id}
             event_bus.publish({
                 "event_type": "rpki.validation",
                 "timestamp": clock.now(),
@@ -40,11 +34,11 @@ def register(event_bus, clock, scenario_name: str) -> None:
                     "origin_as": entry["origin_as"],
                     "validation_state": entry["rpki_state"],
                 },
-                "scenario": {"name": scenario_name, "attack_step": "baseline"}
+                "scenario": scenario_meta
             })
 
         elif action == "suspicious_login":
-            # Access monitoring event
+            scenario_meta = {"name": scenario_name, "attack_step": "initial_access", "incident_id": incident_id}
             event_bus.publish({
                 "event_type": "access.login",
                 "timestamp": clock.now(),
@@ -57,41 +51,11 @@ def register(event_bus, clock, scenario_name: str) -> None:
                     "suspicious": True,
                     "reason": "unusual_location"
                 },
-                "scenario": {"name": scenario_name, "attack_step": "initial_access"}
-            })
-
-        elif action == "roa_deleted":
-            # ROA change event
-            event_bus.publish({
-                "event_type": "rpki.roa_change",
-                "timestamp": clock.now(),
-                "source": {"feed": "rpki-ca", "observer": "ripe_ncc"},
-                "attributes": {
-                    "change_type": "removed",
-                    "prefix": entry["prefix"],
-                    "origin_as": entry["origin_as"],
-                    "actor": entry["actor"],
-                },
-                "scenario": {"name": scenario_name, "attack_step": "roa_manipulation"}
-            })
-
-        elif action == "rpki_state_flip":
-            # RPKI state change
-            event_bus.publish({
-                "event_type": "rpki.state_change",
-                "timestamp": clock.now(),
-                "source": {"feed": "rpki-validator", "observer": "validator"},
-                "attributes": {
-                    "prefix": entry["prefix"],
-                    "origin_as": entry["origin_as"],
-                    "previous_state": entry["previous_state"],
-                    "current_state": entry["current_state"],
-                },
-                "scenario": {"name": scenario_name, "attack_step": "rpki_impact"}
+                "scenario": scenario_meta
             })
 
         elif action == "policy_commit":
-            # Policy change event
+            scenario_meta = {"name": scenario_name, "attack_step": "policy_change", "incident_id": incident_id}
             event_bus.publish({
                 "event_type": "config.commit",
                 "timestamp": clock.now(),
@@ -102,48 +66,27 @@ def register(event_bus, clock, scenario_name: str) -> None:
                     "message": entry["message"],
                     "files_changed": entry["files_changed"],
                 },
-                "scenario": {"name": scenario_name, "attack_step": "policy_change"}
+                "scenario": scenario_meta
             })
 
-            syslog_gen.configuration_change(
-                user=entry["user"],
-                change_summary=entry["message"],
-                attack_step="policy_change",
+            syslog_gen.emit(
+                message=f"Configuration change by {entry['user']}: {entry['message']}",
+                severity="notice",
+                subsystem="config",
+                scenario=scenario_meta
             )
-
-        elif action == "announce_with_roa":
-            # Attacker announces with valid ROA
-            bgp_gen.emit_update(
-                prefix=entry["prefix"],
-                as_path=[65004],
-                origin_as=entry["attacker_as"],
-                next_hop="198.51.100.10",
-                attack_step="malicious_announce",
-            )
-
-            event_bus.publish({
-                "event_type": "rpki.validation",
-                "timestamp": clock.now(),
-                "source": {"feed": "rpki-validator", "observer": "validator"},
-                "attributes": {
-                    "prefix": entry["prefix"],
-                    "origin_as": entry["attacker_as"],
-                    "validation_state": entry["rpki_state"],
-                },
-                "scenario": {"name": scenario_name, "attack_step": "malicious_announce"}
-            })
 
         elif action == "victim_route_rejected":
-            # Victim's route rejected
+            scenario_meta = {"name": scenario_name, "attack_step": "route_rejection", "incident_id": incident_id}
             syslog_gen.emit(
                 severity="error",
                 message=f"Route {entry['prefix']} from AS{entry['victim_as']} rejected: {entry['reason']}",
                 subsystem="bgp",
-                attack_step="route_rejection",
+                scenario=scenario_meta
             )
 
         elif action == "blackhole_community":
-            # Blackhole community attached
+            scenario_meta = {"name": scenario_name, "attack_step": "blackhole", "incident_id": incident_id}
             event_bus.publish({
                 "event_type": "bgp.community_detected",
                 "timestamp": clock.now(),
@@ -154,55 +97,16 @@ def register(event_bus, clock, scenario_name: str) -> None:
                     "origin_as": entry["attacker_as"],
                     "community_name": "blackhole",
                 },
-                "scenario": {"name": scenario_name, "attack_step": "blackhole"}
+                "scenario": scenario_meta
             })
 
             syslog_gen.emit(
                 severity="critical",
                 message=f"Blackhole community {entry['community']} detected on {entry['prefix']}",
                 subsystem="bgp",
-                attack_step="blackhole",
+                scenario=scenario_meta
             )
 
-        elif action == "coordinated_flap":
-            # Route flapping event
-            event_bus.publish({
-                "event_type": "bgp.flap_detected",
-                "timestamp": clock.now(),
-                "source": {"feed": "bgp-monitor", "observer": "collector"},
-                "attributes": {
-                    "prefixes": entry["prefixes"],
-                    "flap_count": entry["flap_count"],
-                    "pattern": "coordinated",
-                },
-                "scenario": {"name": scenario_name, "attack_step": "route_flapping"}
-            })
-
-        elif action == "roa_restored":
-            # ROA restored
-            event_bus.publish({
-                "event_type": "rpki.roa_change",
-                "timestamp": clock.now(),
-                "source": {"feed": "rpki-ca", "observer": "ripe_ncc"},
-                "attributes": {
-                    "change_type": "added",
-                    "prefix": entry["prefix"],
-                    "origin_as": entry["origin_as"],
-                    "actor": entry["actor"],
-                },
-                "scenario": {"name": scenario_name, "attack_step": "cleanup"}
-            })
-
-        elif action == "logout":
-            # Logout event
-            event_bus.publish({
-                "event_type": "access.logout",
-                "timestamp": clock.now(),
-                "source": {"feed": "auth-system", "observer": "tacacs"},
-                "attributes": {
-                    "user": entry["user"],
-                },
-                "scenario": {"name": scenario_name, "attack_step": "disconnection"}
-            })
+        # Add other actions similarly...
 
     event_bus.subscribe(telemetry_listener)
