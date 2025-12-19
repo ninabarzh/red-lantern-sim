@@ -7,8 +7,8 @@ import sys
 import importlib.util
 from pathlib import Path
 from typing import Any
-import socket
-import json
+# import socket
+# import json
 
 from simulator.engine.event_bus import EventBus
 from simulator.engine.scenario_runner import ScenarioRunner
@@ -83,7 +83,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     event_bus = EventBus()
-    event_bus.subscribe(send_to_wazuh)
+#    event_bus.subscribe(send_to_wazuh)
+    event_bus.subscribe(print_event)
 
     runner = ScenarioRunner(
         scenario_path=scenario_path,
