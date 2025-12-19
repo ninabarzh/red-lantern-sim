@@ -1,0 +1,55 @@
+id: subprefix-intercept
+description: >
+  More-specific prefix announcement with polite forwarding.
+  Attacker announces /25 inside victim's /24, intercepts traffic,
+  forwards it onwards to preserve service. Stealthy MITM where
+  services keep working whilst the attacker watches.
+
+timeline:
+  - t: 0
+    action: start
+
+  - t: 5
+    action: baseline
+    prefix: 203.0.113.0/24
+    victim_as: 65001
+    note: "Normal routing, legitimate announcement"
+
+  - t: 60
+    action: announce_subprefix
+    parent_prefix: 203.0.113.0/24
+    subprefix: 203.0.113.128/25
+    attacker_as: 65003
+    victim_as: 65001
+    note: "Subprefix announcement exploits longest-prefix-match"
+
+  - t: 65
+    action: traffic_intercept
+    subprefix: 203.0.113.128/25
+    attacker_as: 65003
+    note: "Traffic now flowing through attacker AS"
+
+  - t: 70
+    action: latency_spike
+    source: victim_network
+    target: 203.0.113.128/25
+    baseline_ms: 45.0
+    observed_ms: 132.0
+    note: "Increased latency from rerouting"
+
+  - t: 300
+    action: maintain
+    note: "Interception ongoing, forwarding maintained"
+
+  - t: 480
+    action: withdraw
+    subprefix: 203.0.113.128/25
+    attacker_as: 65003
+    note: "Attacker withdraws subprefix"
+
+  - t: 485
+    action: latency_normal
+    source: victim_network
+    target: 203.0.113.128/25
+    observed_ms: 47.0
+    note: "Latency returns to baseline"
