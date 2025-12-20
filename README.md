@@ -24,6 +24,36 @@ would emit during routing incidents and attacks.
 
 If you are expecting magic, you are in the wrong forest.
 
+## Development and quality
+
+### Linting & formatting
+
+The project is configured with `ruff` (for linting and formatting) and `mypy` (for static type checking).
+
+| Command                      | Purpose                                  | Configuration file |
+|------------------------------|------------------------------------------|--------------------|
+| `ruff check .`               | Check code for linting errors            | `pyproject.toml`   |
+| `ruff check --fix .`         | Automatically fix fixable linting errors | `pyproject.toml`   |
+| `ruff format .`              | Format all code according to style rules | `pyproject.toml`   |
+| `mypy simulator/ telemetry/` | Run static type checking                 | `pyproject.toml`   |
+
+*Note*: The project uses `ruff` as a unified tool that replaces both `flake8` and `isort`. All configuration is in `pyproject.toml`.
+
+### Testing
+
+Tests are organized in a [tests/](tests) directory with `pytest`.
+
+| Command                                  | Purpose                           |
+|------------------------------------------|-----------------------------------|
+| `pytest tests/ -v`                       | Run all tests with verbose output |
+| `pytest tests/unit/ -v`                  | Run only unit tests               |
+| `pytest tests/integration/ -v`           | Run only integration tests        |
+| `pytest --cov=simulator --cov=telemetry` | Run tests with coverage report    |
+
+### Dependencies
+
+- Install main dependencies: `pip install -r requirements.txt`
+- Install development tools: `pip install pytest ruff mypy`
 
 ## Architecture overview
 
