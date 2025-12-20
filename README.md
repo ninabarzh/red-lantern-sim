@@ -2,8 +2,9 @@
 
 Red Lantern Simulator is a deterministic attack-telemetry generator for network and routing security scenarios.
 
-It simulates BGP- and control-plane–related attacks and emits structured JSON events designed to be ingested by 
-Wazuh for detection engineering, rule testing, and analyst training.
+It simulates [BGP- and control-plane–related attacks](https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/) and 
+emits structured JSON events designed to be ingested by Wazuh for [detection engineering, rule testing, and analyst 
+training](https://blue.tymyrddin.dev/docs/shadows/red-lantern/).
 
 This project intends to produce realistic, time-ordered telemetry that *looks like* what real infrastructure 
 would emit during routing incidents and attacks.
