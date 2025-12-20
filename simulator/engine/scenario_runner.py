@@ -27,7 +27,7 @@ class ScenarioRunner:
         self.scenario_path = scenario_path
         self.event_bus = event_bus
         self.clock = SimulationClock()
-        self.scenario: Dict[str, Any] = {}
+        self.scenario: dict[str, Any] = {}
 
     def load(self) -> None:
         """
@@ -53,7 +53,7 @@ class ScenarioRunner:
             close_bus: whether to close the EventBus after execution
                        (use False if running multiple scenarios in one session)
         """
-        timeline: List[Dict[str, Any]] = sorted(
+        timeline: list[dict[str, Any]] = sorted(
             self.scenario.get("timeline", []),
             key=lambda e: e.get("t", 0),
         )

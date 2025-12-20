@@ -34,8 +34,8 @@ class MockCMDB:
         requester: str,
         start_time: datetime,
         end_time: datetime,
-        affected_prefixes: Optional[list[str]] = None,
-        affected_systems: Optional[list[str]] = None,
+        affected_prefixes: list[str] | None = None,
+        affected_systems: list[str] | None = None,
         status: str = "approved",
         risk: str = "medium",
     ) -> str:
@@ -79,8 +79,8 @@ class MockCMDB:
         self,
         change_type: str,
         timestamp: datetime,
-        prefix: Optional[str] = None,
-        system: Optional[str] = None,
+        prefix: str | None = None,
+        system: str | None = None,
     ) -> bool:
         """
         Check if a change is authorised at a given time.
@@ -126,7 +126,7 @@ class MockCMDB:
     def generate_telemetry_event(
         self,
         ticket_id: str,
-        scenario_name: Optional[str] = None,
+        scenario_name: str | None = None,
     ) -> dict[str, Any]:
         """
         Generate a telemetry event for a change ticket.

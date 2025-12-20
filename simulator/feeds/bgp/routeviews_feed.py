@@ -24,8 +24,8 @@ class RouteViewsFeedMock:
 
     def __init__(
         self,
-        collector: Optional[str] = None,
-        peer_ip: Optional[str] = None,
+        collector: str | None = None,
+        peer_ip: str | None = None,
     ):
         """
         Args:
@@ -48,8 +48,8 @@ class RouteViewsFeedMock:
         prefix: str,
         as_path: list[int],
         next_hop: str,
-        local_pref: Optional[int] = None,
-        med: Optional[int] = None,
+        local_pref: int | None = None,
+        med: int | None = None,
         atomic_aggregate: bool = False,
     ) -> dict[str, Any]:
         """
@@ -93,7 +93,7 @@ class RouteViewsFeedMock:
         prefix: str,
         as_path: list[int],
         next_hop: str,
-        attributes: Optional[dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
         Generate a RouteViews BGP UPDATE message.
@@ -152,8 +152,8 @@ class RouteViewsFeedMock:
     @staticmethod
     def to_telemetry_event(
         routeviews_message: dict[str, Any],
-        scenario_name: Optional[str] = None,
-        attack_step: Optional[str] = None,
+        scenario_name: str | None = None,
+        attack_step: str | None = None,
     ) -> dict[str, Any]:
         """
         Convert RouteViews message to Red Lantern telemetry format.
@@ -223,7 +223,7 @@ def mock_routeviews_update(
     prefix: str,
     as_path: list[int],
     next_hop: str,
-    collector: Optional[str] = None,
+    collector: str | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """
@@ -244,7 +244,7 @@ def mock_routeviews_update(
 def mock_routeviews_withdrawal(
     timestamp: int,
     prefix: str,
-    collector: Optional[str] = None,
+    collector: str | None = None,
 ) -> dict[str, Any]:
     """
     Generate a mock RouteViews WITHDRAWAL in telemetry format.

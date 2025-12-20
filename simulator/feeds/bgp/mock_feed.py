@@ -25,8 +25,8 @@ class MockBGPFeed:
         self,
         prefix: str,
         origin_as: int,
-        as_path: List[int],
-        collectors: Optional[List[str]] = None,
+        as_path: list[int],
+        collectors: list[str] | None = None,
     ) -> None:
         """
         Register a baseline route as normally observed on the Internet.
@@ -37,14 +37,14 @@ class MockBGPFeed:
             "collectors": collectors or ["routeviews", "ris"],
         }
 
-    def expected_origin(self, prefix: str) -> Optional[int]:
+    def expected_origin(self, prefix: str) -> int | None:
         """
         Return the normally expected origin AS for a prefix.
         """
         route = self._routes.get(prefix)
         return route["origin_as"] if route else None
 
-    def expected_as_path(self, prefix: str) -> Optional[List[int]]:
+    def expected_as_path(self, prefix: str) -> list[int] | None:
         """
         Return the normally observed AS path.
         """

@@ -36,8 +36,8 @@ class RISFeedMock:
         prefix: str,
         as_path: list[int],
         origin: str = "IGP",
-        next_hop: Optional[str] = None,
-        communities: Optional[list[str]] = None,
+        next_hop: str | None = None,
+        communities: list[str] | None = None,
     ) -> dict[str, Any]:
         """
         Generate a RIS-style BGP UPDATE message.
@@ -107,8 +107,8 @@ class RISFeedMock:
     @staticmethod
     def to_telemetry_event(
         ris_message: dict[str, Any],
-        scenario_name: Optional[str] = None,
-        attack_step: Optional[str] = None,
+        scenario_name: str | None = None,
+        attack_step: str | None = None,
     ) -> dict[str, Any]:
         """
         Convert RIS message to Red Lantern telemetry format.

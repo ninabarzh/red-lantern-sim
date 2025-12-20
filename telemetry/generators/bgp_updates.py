@@ -32,7 +32,7 @@ class BGPUpdateGenerator:
         as_path: list[int],
         origin_as: int,
         next_hop: str,
-        scenario: Dict[str, Any] | None = None,
+        scenario: dict[str, Any] | None = None,
     ) -> None:
         """
         Emit a BGP UPDATE event.
@@ -60,7 +60,7 @@ class BGPUpdateGenerator:
         self.event_bus.publish(event)
 
     def emit_withdraw(
-        self, prefix: str, withdrawn_by_as: int, scenario: Dict[str, Any] | None = None
+        self, prefix: str, withdrawn_by_as: int, scenario: dict[str, Any] | None = None
     ) -> None:
         """
         Emit a BGP WITHDRAW event.

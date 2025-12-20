@@ -10,9 +10,10 @@ not decide what they mean. It simply delivers them to registered
 subscribers.
 """
 
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any, Dict, List
 
-Event = Dict[str, Any]
+Event = dict[str, Any]
 Subscriber = Callable[[Event], None]
 
 
@@ -26,7 +27,7 @@ class EventBus:
     """
 
     def __init__(self) -> None:
-        self._subscribers: List[Subscriber] = []
+        self._subscribers: list[Subscriber] = []
         self._closed: bool = False
 
     def subscribe(self, handler: Subscriber) -> None:

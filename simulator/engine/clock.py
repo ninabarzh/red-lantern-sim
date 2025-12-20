@@ -29,7 +29,7 @@ class SimulationClock:
         """
         return self._current_time
 
-    def advance_to(self, target_time: Union[int, float]) -> None:
+    def advance_to(self, target_time: int | float) -> None:
         """
         Advance the clock to the specified time.
 
