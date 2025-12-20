@@ -12,7 +12,7 @@ from telemetry.generators.bgp_updates import BGPUpdateGenerator
 from telemetry.generators.router_syslog import RouterSyslogGenerator
 
 
-def register(event_bus: EventBus, clock, scenario_name: str):
+def register(event_bus: EventBus, clock: Any, scenario_name: str) -> None:
     bgp_gen = BGPUpdateGenerator(
         clock=clock, event_bus=event_bus, scenario_name=scenario_name
     )
@@ -20,7 +20,7 @@ def register(event_bus: EventBus, clock, scenario_name: str):
         clock=clock, event_bus=event_bus, router_name="R1", scenario_name=scenario_name
     )
 
-    def on_timeline_event(event: dict[str, Any]):
+    def on_timeline_event(event: dict[str, Any]) -> None:
         entry = event.get("entry", {})
         action = entry.get("action")
         prefix = entry.get("prefix") or entry.get("subprefix")

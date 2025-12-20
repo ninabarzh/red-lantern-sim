@@ -40,7 +40,7 @@ class RouterSyslogGenerator:
         subsystem: str | None = None,
         peer_ip: str | None = None,
         scenario: Dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """
         Emit a generic syslog event.
 
@@ -69,7 +69,7 @@ class RouterSyslogGenerator:
 
     def prefix_limit_exceeded(
         self, peer_ip: str, limit: int, scenario: Dict[str, Any] | None = None
-    ):
+    ) -> None:
         """
         Emit an ERROR for exceeding prefix limit.
 
@@ -88,7 +88,7 @@ class RouterSyslogGenerator:
 
     def bgp_session_reset(
         self, peer_ip: str, reason: str, scenario: Dict[str, Any] | None = None
-    ):
+    ) -> None:
         """
         Emit a WARNING for BGP session reset.
 
@@ -107,7 +107,7 @@ class RouterSyslogGenerator:
 
     def configuration_change(
         self, user: str, change_summary: str, attack_step: str | None = None
-    ):
+    ) -> None:
         """
         Emit a syslog for configuration changes.
 

@@ -9,8 +9,8 @@ For simulation purposes, we generate RouteViews-style MRT (Multi-Threaded Routin
 formatted data, converted to our telemetry schema.
 """
 
-from typing import Dict, Any, List, Optional
 import json
+from typing import Any, Optional
 
 
 class RouteViewsFeedMock:
@@ -37,12 +37,12 @@ class RouteViewsFeedMock:
         self,
         timestamp: int,
         prefix: str,
-        as_path: List[int],
+        as_path: list[int],
         next_hop: str,
         local_pref: Optional[int] = None,
         med: Optional[int] = None,
         atomic_aggregate: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate a RouteViews routing table entry.
 
@@ -82,10 +82,10 @@ class RouteViewsFeedMock:
         self,
         timestamp: int,
         prefix: str,
-        as_path: List[int],
+        as_path: list[int],
         next_hop: str,
-        attributes: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        attributes: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """
         Generate a RouteViews BGP UPDATE message.
 
@@ -120,7 +120,7 @@ class RouteViewsFeedMock:
         self,
         timestamp: int,
         prefix: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate a RouteViews BGP WITHDRAWAL message.
 
@@ -140,12 +140,12 @@ class RouteViewsFeedMock:
             "withdrawn_prefixes": [prefix],
         }
 
+    @staticmethod
     def to_telemetry_event(
-        self,
-        routeviews_message: Dict[str, Any],
+        routeviews_message: dict[str, Any],
         scenario_name: Optional[str] = None,
         attack_step: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Convert RouteViews message to Red Lantern telemetry format.
 
@@ -212,26 +212,26 @@ class RouteViewsFeedMock:
 def mock_routeviews_update(
     timestamp: int,
     prefix: str,
-    as_path: List[int],
+    as_path: list[int],
     next_hop: str,
     collector: str = "route-views.oregon-ix.net",
-    **kwargs,
-) -> Dict[str, Any]:
+    **kwargs: Any,
+) -> dict[str, Any]:
     """Generate a mock RouteViews UPDATE in telemetry format."""
     feed = RouteViewsFeedMock(collector=collector)
     rv_msg = feed.generate_update(timestamp, prefix, as_path, next_hop, **kwargs)
-    return feed.to_telemetry_event(rv_msg)
+    return RouteViewsFeedMock.to_telemetry_event(rv_msg)  # Changed to static call
 
 
 def mock_routeviews_withdrawal(
     timestamp: int,
     prefix: str,
     collector: str = "route-views.oregon-ix.net",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate a mock RouteViews WITHDRAWAL in telemetry format."""
     feed = RouteViewsFeedMock(collector=collector)
     rv_msg = feed.generate_withdrawal(timestamp, prefix)
-    return feed.to_telemetry_event(rv_msg)
+    return RouteViewsFeedMock.to_telemetry_event(rv_msg)  # Changed to static call
 
 
 if __name__ == "__main__":
@@ -251,6 +251,6 @@ if __name__ == "__main__":
     print(json.dumps(update, indent=2))
 
     # Convert to telemetry
-    telemetry = feed.to_telemetry_event(update, scenario_name="test")
+    telemetry = RouteViewsFeedMock.to_telemetry_event(update, scenario_name="test")  # Static call
     print("\nTelemetry format:")
     print(json.dumps(telemetry, indent=2))

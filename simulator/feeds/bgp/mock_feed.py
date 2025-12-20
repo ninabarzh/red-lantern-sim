@@ -9,7 +9,7 @@ queried by scenario telemetry to enrich events with context such as:
 - visibility across collectors
 """
 
-from typing import Dict, List, Optional
+from typing import Any, List, Optional
 
 
 class MockBGPFeed:
@@ -19,7 +19,7 @@ class MockBGPFeed:
 
     def __init__(self) -> None:
         # prefix -> baseline attributes
-        self._routes: Dict[str, Dict] = {}
+        self._routes: dict[str, dict[str, Any]] = {}
 
     def add_route(
         self,

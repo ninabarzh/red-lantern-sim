@@ -22,7 +22,7 @@ class MockCMDB:
     for detecting unauthorised BGP policy modifications.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialise with empty change database."""
         self.changes: Dict[str, Dict[str, Any]] = {}
         self.change_counter = 1000

@@ -41,7 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
 def load_scenario_telemetry(
     scenario_path: Path,
     event_bus: EventBus,
-    clock,
+    clock: Any,
     scenario_id: str,
 ) -> None:
     """

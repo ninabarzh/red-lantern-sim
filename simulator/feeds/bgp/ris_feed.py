@@ -9,9 +9,9 @@ For simulation purposes, we generate realistic-looking RIS messages
 that match the schema and timing characteristics of real RIS data.
 """
 
-from typing import Dict, Any, List, Optional
 from datetime import datetime
 import json
+from typing import Any, Optional
 
 
 class RISFeedMock:
@@ -34,11 +34,11 @@ class RISFeedMock:
         self,
         timestamp: int,
         prefix: str,
-        as_path: List[int],
+        as_path: list[int],
         origin: str = "IGP",
         next_hop: Optional[str] = None,
-        communities: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        communities: Optional[list[str]] = None,
+    ) -> dict[str, Any]:
         """
         Generate a RIS-style BGP UPDATE message.
 
@@ -82,7 +82,7 @@ class RISFeedMock:
         self,
         timestamp: int,
         prefix: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate a RIS-style BGP WITHDRAWAL message.
 
@@ -104,12 +104,12 @@ class RISFeedMock:
             "withdrawals": [prefix],
         }
 
+    @staticmethod
     def to_telemetry_event(
-        self,
-        ris_message: Dict[str, Any],
+        ris_message: dict[str, Any],
         scenario_name: Optional[str] = None,
         attack_step: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Convert RIS message to Red Lantern telemetry format.
 
@@ -123,7 +123,7 @@ class RISFeedMock:
         """
         event_type = "bgp.update" if ris_message["type"] == "UPDATE" else "bgp.withdraw"
 
-        attributes: Dict[str, Any] = {}
+        attributes: dict[str, Any] = {}
 
         if ris_message["type"] == "UPDATE":
             # Extract announcement details
@@ -172,25 +172,25 @@ class RISFeedMock:
 def mock_ris_update(
     timestamp: int,
     prefix: str,
-    as_path: List[int],
+    as_path: list[int],
     collector: str = "rrc00",
-    **kwargs,
-) -> Dict[str, Any]:
+    **kwargs: Any,
+) -> dict[str, Any]:
     """Generate a mock RIS UPDATE in telemetry format."""
     feed = RISFeedMock(collector=collector)
     ris_msg = feed.generate_update(timestamp, prefix, as_path, **kwargs)
-    return feed.to_telemetry_event(ris_msg)
+    return RISFeedMock.to_telemetry_event(ris_msg)  # Static call
 
 
 def mock_ris_withdrawal(
     timestamp: int,
     prefix: str,
     collector: str = "rrc00",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate a mock RIS WITHDRAWAL in telemetry format."""
     feed = RISFeedMock(collector=collector)
     ris_msg = feed.generate_withdrawal(timestamp, prefix)
-    return feed.to_telemetry_event(ris_msg)
+    return RISFeedMock.to_telemetry_event(ris_msg)  # Static call
 
 
 if __name__ == "__main__":
@@ -209,6 +209,6 @@ if __name__ == "__main__":
     print(json.dumps(update, indent=2))
 
     # Convert to telemetry
-    telemetry = feed.to_telemetry_event(update, scenario_name="test")
+    telemetry = RISFeedMock.to_telemetry_event(update, scenario_name="test")  # Static call
     print("\nTelemetry format:")
     print(json.dumps(telemetry, indent=2))

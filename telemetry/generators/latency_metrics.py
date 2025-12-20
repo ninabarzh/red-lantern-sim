@@ -33,7 +33,7 @@ class LatencyMetricsGenerator:
         jitter_ms: float,
         packet_loss_pct: float,
         scenario: Dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """
         Emit a synthetic latency metrics event.
 
