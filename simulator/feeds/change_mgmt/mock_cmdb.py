@@ -9,9 +9,9 @@ For simulation purposes, we generate mock change tickets that can be correlated
 with BGP events to detect unauthorised changes.
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
-import uuid
+from datetime import datetime, timedelta, UTC
+import json
+from typing import Any, Optional
 
 
 class MockCMDB:
@@ -24,7 +24,7 @@ class MockCMDB:
 
     def __init__(self) -> None:
         """Initialise with empty change database."""
-        self.changes: Dict[str, Dict[str, Any]] = {}
+        self.changes: dict[str, dict[str, Any]] = {}
         self.change_counter = 1000
 
     def create_change_ticket(
@@ -34,8 +34,8 @@ class MockCMDB:
         requester: str,
         start_time: datetime,
         end_time: datetime,
-        affected_prefixes: Optional[List[str]] = None,
-        affected_systems: Optional[List[str]] = None,
+        affected_prefixes: Optional[list[str]] = None,
+        affected_systems: Optional[list[str]] = None,
         status: str = "approved",
         risk: str = "medium",
     ) -> str:
@@ -70,7 +70,7 @@ class MockCMDB:
             "affected_systems": affected_systems or [],
             "status": status,
             "risk": risk,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),  # Modern timezone-aware
         }
 
         return ticket_id
@@ -127,7 +127,7 @@ class MockCMDB:
         self,
         ticket_id: str,
         scenario_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate a telemetry event for a change ticket.
 
@@ -145,7 +145,7 @@ class MockCMDB:
 
         event = {
             "event_type": "change_mgmt.ticket",
-            "timestamp": int(datetime.utcnow().timestamp()),
+            "timestamp": int(datetime.now(UTC).timestamp()),  # Modern timezone-aware
             "source": {
                 "feed": "cmdb",
                 "observer": "change_management_system",
@@ -169,7 +169,7 @@ class MockCMDB:
 
         return event
 
-    def get_active_changes(self, timestamp: datetime) -> List[Dict[str, Any]]:
+    def get_active_changes(self, timestamp: datetime) -> list[dict[str, Any]]:
         """
         Get all active change tickets at a given time.
 
@@ -199,7 +199,7 @@ def generate_approved_bgp_change(
     start_offset_minutes: int = 0,
     duration_minutes: int = 60,
     requester: str = "network_ops",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate an approved BGP policy change ticket.
 
@@ -214,7 +214,7 @@ def generate_approved_bgp_change(
     """
     cmdb = MockCMDB()
 
-    start_time = datetime.utcnow() + timedelta(minutes=start_offset_minutes)
+    start_time = datetime.now(UTC) + timedelta(minutes=start_offset_minutes)  # Modern
     end_time = start_time + timedelta(minutes=duration_minutes)
 
     ticket_id = cmdb.create_change_ticket(
@@ -236,7 +236,7 @@ def generate_roa_change_ticket(
     start_offset_minutes: int = 0,
     duration_minutes: int = 30,
     requester: str = "security_team",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate an approved RPKI ROA change ticket.
 
@@ -251,7 +251,7 @@ def generate_roa_change_ticket(
     """
     cmdb = MockCMDB()
 
-    start_time = datetime.utcnow() + timedelta(minutes=start_offset_minutes)
+    start_time = datetime.now(UTC) + timedelta(minutes=start_offset_minutes)  # Modern
     end_time = start_time + timedelta(minutes=duration_minutes)
 
     ticket_id = cmdb.create_change_ticket(
@@ -271,12 +271,10 @@ def generate_roa_change_ticket(
 
 if __name__ == "__main__":
     # Example usage
-    import json
-
     cmdb = MockCMDB()
 
     # Create approved change
-    now = datetime.utcnow()
+    now = datetime.now(UTC)  # Modern timezone-aware
     ticket_id = cmdb.create_change_ticket(
         change_type="bgp_policy",
         description="Update peer filters for AS65001",

@@ -11,3 +11,32 @@ exclude = '''
 )/
 '''
 
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = false
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "simulator.*"
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "telemetry.*"
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]          # Where to look for tests
+python_files = ["test_*.py", "*_test.py"]   # What files are test files
+python_functions = ["test_*"]  # What functions are tests
+python_classes = ["Test*"]
+addopts = "-v --tb=short"
+markers = [
+    "unit: unit tests (fast, isolated)",
+    "integration: integration tests (multiple components)",
+    "e2e: end-to-end tests (full scenarios)",
+    "slow: tests that take longer to run",
+]

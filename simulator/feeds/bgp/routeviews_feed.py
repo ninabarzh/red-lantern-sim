@@ -1,15 +1,16 @@
 """
 RouteViews feed mock.
 
-This module simulates BGP data as it would appear from University of Oregon's
-RouteViews project. RouteViews provides BGP routing tables and UPDATE messages
-from collectors around the world.
+This module simulates BGP data as it would appear from RouteViews collectors.
+RouteViews provides BGP routing tables and UPDATE messages from collectors
+around the world. European defaults are used unless overridden.
 
 For simulation purposes, we generate RouteViews-style MRT (Multi-Threaded Routing Toolkit)
 formatted data, converted to our telemetry schema.
 """
 
 import json
+import os
 from typing import Any, Optional
 
 
@@ -18,20 +19,28 @@ class RouteViewsFeedMock:
     Mock RouteViews BGP feed generator.
 
     Produces BGP messages in a format similar to RouteViews collectors.
+    Uses European defaults (Amsterdam) unless specified otherwise.
     """
 
     def __init__(
         self,
-        collector: str = "route-views.oregon-ix.net",
-        peer_ip: str = "198.32.176.1",
+        collector: Optional[str] = None,
+        peer_ip: Optional[str] = None,
     ):
         """
         Args:
-            collector: RouteViews collector hostname
-            peer_ip: IP address of the BGP peer
+            collector: RouteViews collector hostname. Defaults to Amsterdam.
+            peer_ip: IP address of the BGP peer. Defaults to European IP.
         """
-        self.collector = collector
-        self.peer_ip = peer_ip
+        # Use European defaults unless specified
+        self.collector = collector or os.getenv(
+            "ROUTEVIEWS_COLLECTOR",
+            "route-views.amsix"  # Amsterdam Internet Exchange
+        )
+        self.peer_ip = peer_ip or os.getenv(
+            "ROUTEVIEWS_PEER_IP",
+            "193.0.0.56"  # European IP range
+        )
 
     def generate_table_dump(
         self,
@@ -206,7 +215,7 @@ class RouteViewsFeedMock:
         return event
 
 
-# Convenience functions
+# Convenience functions with European defaults
 
 
 def mock_routeviews_update(
@@ -214,29 +223,66 @@ def mock_routeviews_update(
     prefix: str,
     as_path: list[int],
     next_hop: str,
-    collector: str = "route-views.oregon-ix.net",
+    collector: Optional[str] = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    """Generate a mock RouteViews UPDATE in telemetry format."""
-    feed = RouteViewsFeedMock(collector=collector)
+    """
+    Generate a mock RouteViews UPDATE in telemetry format.
+
+    Uses European defaults unless collector is specified.
+    """
+    # Use provided collector or default to Amsterdam
+    actual_collector = collector or os.getenv(
+        "ROUTEVIEWS_COLLECTOR",
+        "route-views.amsix"
+    )
+
+    feed = RouteViewsFeedMock(collector=actual_collector)
     rv_msg = feed.generate_update(timestamp, prefix, as_path, next_hop, **kwargs)
-    return RouteViewsFeedMock.to_telemetry_event(rv_msg)  # Changed to static call
+    return RouteViewsFeedMock.to_telemetry_event(rv_msg)
 
 
 def mock_routeviews_withdrawal(
     timestamp: int,
     prefix: str,
-    collector: str = "route-views.oregon-ix.net",
+    collector: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Generate a mock RouteViews WITHDRAWAL in telemetry format."""
-    feed = RouteViewsFeedMock(collector=collector)
+    """
+    Generate a mock RouteViews WITHDRAWAL in telemetry format.
+
+    Uses European defaults unless collector is specified.
+    """
+    # Use provided collector or default to Amsterdam
+    actual_collector = collector or os.getenv(
+        "ROUTEVIEWS_COLLECTOR",
+        "route-views.amsix"
+    )
+
+    feed = RouteViewsFeedMock(collector=actual_collector)
     rv_msg = feed.generate_withdrawal(timestamp, prefix)
-    return RouteViewsFeedMock.to_telemetry_event(rv_msg)  # Changed to static call
+    return RouteViewsFeedMock.to_telemetry_event(rv_msg)
+
+
+# European collector constants for easy reference
+EUROPEAN_COLLECTORS = {
+    "amsterdam": "route-views.amsix",
+    "london": "route-views.linx",
+    "frankfurt": "route-views.fra",  # If available
+    "paris": "route-views.paris",    # If available
+    "cape_town": "route-views.napafrica",  # Close to Europe
+}
 
 
 if __name__ == "__main__":
     # Example usage
+    print("European RouteViews Feed Mock")
+    print("=" * 50)
+
+    # Show default European collector
     feed = RouteViewsFeedMock()
+    print(f"Default collector: {feed.collector}")
+    print(f"Default peer IP: {feed.peer_ip}")
+    print()
 
     # Generate UPDATE
     update = feed.generate_update(
@@ -247,10 +293,15 @@ if __name__ == "__main__":
         attributes={"local_pref": 100, "med": 0},
     )
 
-    print("RouteViews UPDATE:")
+    print("RouteViews UPDATE (European format):")
     print(json.dumps(update, indent=2))
 
     # Convert to telemetry
-    telemetry = RouteViewsFeedMock.to_telemetry_event(update, scenario_name="test")  # Static call
+    telemetry = RouteViewsFeedMock.to_telemetry_event(update, scenario_name="test")
     print("\nTelemetry format:")
     print(json.dumps(telemetry, indent=2))
+
+    # Show available European collectors
+    print("\nAvailable European collectors:")
+    for location, collector in EUROPEAN_COLLECTORS.items():
+        print(f"  {location.title():12} → {collector}")
