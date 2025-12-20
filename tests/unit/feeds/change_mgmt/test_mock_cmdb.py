@@ -1,6 +1,9 @@
 """Unit tests for mock Configuration Management Database."""
+
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timedelta, UTC
+
 from simulator.feeds.change_mgmt.mock_cmdb import MockCMDB
 
 
@@ -28,7 +31,7 @@ class TestMockCMDB:
             affected_prefixes=["203.0.113.0/24", "198.51.100.0/24"],
             affected_systems=["router-core-01"],
             status="approved",
-            risk="medium"
+            risk="medium",
         )
 
         # Verify ticket was created
@@ -54,14 +57,14 @@ class TestMockCMDB:
             start_time=now,
             end_time=now + timedelta(hours=1),
             affected_prefixes=["203.0.113.0/24"],
-            status="approved"
+            status="approved",
         )
 
         # Check authorisation during the window
         is_authorised = cmdb.is_change_authorised(
             change_type="bgp_policy",
             timestamp=now + timedelta(minutes=30),
-            prefix="203.0.113.0/24"
+            prefix="203.0.113.0/24",
         )
 
         assert is_authorised is True
@@ -78,14 +81,14 @@ class TestMockCMDB:
             start_time=now,
             end_time=now + timedelta(hours=1),
             affected_prefixes=["203.0.113.0/24"],
-            status="approved"
+            status="approved",
         )
 
         # Check after the window has ended
         is_authorised = cmdb.is_change_authorised(
             change_type="bgp_policy",
             timestamp=now + timedelta(hours=2),
-            prefix="203.0.113.0/24"
+            prefix="203.0.113.0/24",
         )
 
         assert is_authorised is False
@@ -102,12 +105,11 @@ class TestMockCMDB:
             start_time=now,
             end_time=now + timedelta(hours=1),
             affected_prefixes=["203.0.113.0/24"],
-            status="approved"
+            status="approved",
         )
 
         telemetry = cmdb.generate_telemetry_event(
-            ticket_id=ticket_id,
-            scenario_name="test-scenario"
+            ticket_id=ticket_id, scenario_name="test-scenario"
         )
 
         assert telemetry["event_type"] == "change_mgmt.ticket"
@@ -126,7 +128,7 @@ class TestMockCMDB:
             requester="team-a",
             start_time=now - timedelta(minutes=30),
             end_time=now + timedelta(minutes=30),
-            status="approved"
+            status="approved",
         )
 
         cmdb.create_change_ticket(
@@ -135,7 +137,7 @@ class TestMockCMDB:
             requester="team-b",
             start_time=now + timedelta(hours=1),
             end_time=now + timedelta(hours=2),
-            status="approved"
+            status="approved",
         )
 
         # Should only get the active change

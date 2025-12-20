@@ -1,6 +1,12 @@
 """Unit tests for RIPE RIS feed."""
+
 import pytest
-from simulator.feeds.bgp.ris_feed import RISFeedMock, mock_ris_update, mock_ris_withdrawal
+
+from simulator.feeds.bgp.ris_feed import (
+    RISFeedMock,
+    mock_ris_update,
+    mock_ris_withdrawal,
+)
 
 
 @pytest.mark.unit
@@ -28,7 +34,7 @@ class TestRISFeedMock:
             prefix="203.0.113.0/24",
             as_path=[3333, 64500],
             origin="IGP",
-            next_hop="192.0.2.1"
+            next_hop="192.0.2.1",
         )
 
         assert update["type"] == "UPDATE"
@@ -49,7 +55,7 @@ class TestRISFeedMock:
         update = feed.generate_update(
             timestamp=1700000000,
             prefix="203.0.113.0/24",
-            as_path=[3333, 64500]
+            as_path=[3333, 64500],
             # No next_hop specified, should use default
         )
 
@@ -63,7 +69,7 @@ class TestRISFeedMock:
             timestamp=1700000000,
             prefix="203.0.113.0/24",
             as_path=[3333, 64500],
-            next_hop="198.51.100.1"
+            next_hop="198.51.100.1",
         )
 
         assert update["announcements"][0]["next_hop"] == "198.51.100.1"
@@ -76,7 +82,7 @@ class TestRISFeedMock:
             timestamp=1700000000,
             prefix="203.0.113.0/24",
             as_path=[3333, 64500],
-            communities=["3333:100", "64500:200", "64500:300"]
+            communities=["3333:100", "64500:200", "64500:300"],
         )
 
         assert "communities" in update
@@ -89,7 +95,7 @@ class TestRISFeedMock:
         update = feed.generate_update(
             timestamp=1700000000,
             prefix="203.0.113.0/24",
-            as_path=[3333, 64500]
+            as_path=[3333, 64500],
             # No communities parameter
         )
 
@@ -104,7 +110,7 @@ class TestRISFeedMock:
             timestamp=1700000000,
             prefix="203.0.113.0/24",
             as_path=[3333, 64500],
-            origin="IGP"
+            origin="IGP",
         )
         assert update_igp["origin"] == "IGP"
 
@@ -113,7 +119,7 @@ class TestRISFeedMock:
             timestamp=1700000001,
             prefix="198.51.100.0/24",
             as_path=[3333, 64500],
-            origin="EGP"
+            origin="EGP",
         )
         assert update_egp["origin"] == "EGP"
 
@@ -122,7 +128,7 @@ class TestRISFeedMock:
             timestamp=1700000002,
             prefix="192.0.2.0/24",
             as_path=[3333, 64500],
-            origin="INCOMPLETE"
+            origin="INCOMPLETE",
         )
         assert update_incomplete["origin"] == "INCOMPLETE"
 
@@ -131,8 +137,7 @@ class TestRISFeedMock:
         feed = RISFeedMock(collector="rrc01", peer_asn=64500)
 
         withdrawal = feed.generate_withdrawal(
-            timestamp=1700000000,
-            prefix="203.0.113.0/24"
+            timestamp=1700000000, prefix="203.0.113.0/24"
         )
 
         assert withdrawal["type"] == "WITHDRAWAL"
@@ -152,13 +157,11 @@ class TestRISFeedMock:
             as_path=[3333, 64500],
             origin="IGP",
             next_hop="192.0.2.1",
-            communities=["3333:100", "64500:200"]
+            communities=["3333:100", "64500:200"],
         )
 
         telemetry = RISFeedMock.to_telemetry_event(
-            update,
-            scenario_name="test-scenario",
-            attack_step="announce"
+            update, scenario_name="test-scenario", attack_step="announce"
         )
 
         assert telemetry["event_type"] == "bgp.update"
@@ -180,7 +183,7 @@ class TestRISFeedMock:
         update = feed.generate_update(
             timestamp=1700000000,
             prefix="203.0.113.0/24",
-            as_path=[3333, 64500]
+            as_path=[3333, 64500],
             # No communities
         )
 
@@ -193,14 +196,11 @@ class TestRISFeedMock:
         """Test conversion of WITHDRAWAL to telemetry format."""
         feed = RISFeedMock(peer_asn=64500)
         withdrawal = feed.generate_withdrawal(
-            timestamp=1700000000,
-            prefix="203.0.113.0/24"
+            timestamp=1700000000, prefix="203.0.113.0/24"
         )
 
         telemetry = RISFeedMock.to_telemetry_event(
-            withdrawal,
-            scenario_name="test-scenario",
-            attack_step="withdraw"
+            withdrawal, scenario_name="test-scenario", attack_step="withdraw"
         )
 
         assert telemetry["event_type"] == "bgp.withdraw"
@@ -219,7 +219,7 @@ class TestRISFeedMock:
             timestamp=1700000000,
             prefix="203.0.113.0/24",
             as_path=[],  # Empty path
-            origin="IGP"
+            origin="IGP",
         )
 
         telemetry = RISFeedMock.to_telemetry_event(update)
@@ -231,9 +231,7 @@ class TestRISFeedMock:
         """Test the convenience function for RIS UPDATE."""
         # Test with default collector
         telemetry1 = mock_ris_update(
-            timestamp=1700000000,
-            prefix="203.0.113.0/24",
-            as_path=[3333, 64500]
+            timestamp=1700000000, prefix="203.0.113.0/24", as_path=[3333, 64500]
         )
 
         assert telemetry1["event_type"] == "bgp.update"
@@ -246,7 +244,7 @@ class TestRISFeedMock:
             as_path=[3333, 64500],
             collector="rrc01",
             origin="EGP",
-            next_hop="198.51.100.1"
+            next_hop="198.51.100.1",
         )
 
         assert telemetry2["source"]["observer"] == "rrc01"
@@ -256,19 +254,14 @@ class TestRISFeedMock:
     def test_mock_ris_withdrawal_function(self) -> None:
         """Test the convenience function for RIS WITHDRAWAL."""
         # Test with default collector
-        telemetry1 = mock_ris_withdrawal(
-            timestamp=1700000000,
-            prefix="203.0.113.0/24"
-        )
+        telemetry1 = mock_ris_withdrawal(timestamp=1700000000, prefix="203.0.113.0/24")
 
         assert telemetry1["event_type"] == "bgp.withdraw"
         assert telemetry1["source"]["observer"] == "rrc00"
 
         # Test with custom collector
         telemetry2 = mock_ris_withdrawal(
-            timestamp=1700000001,
-            prefix="198.51.100.0/24",
-            collector="rrc01"
+            timestamp=1700000001, prefix="198.51.100.0/24", collector="rrc01"
         )
 
         assert telemetry2["source"]["observer"] == "rrc01"
@@ -279,9 +272,7 @@ class TestRISFeedMock:
 
         # Test with IPv6 prefix
         update_ipv6 = feed.generate_update(
-            timestamp=1700000000,
-            prefix="2001:db8::/32",
-            as_path=[3333, 64500]
+            timestamp=1700000000, prefix="2001:db8::/32", as_path=[3333, 64500]
         )
 
         assert update_ipv6["announcements"][0]["prefixes"] == ["2001:db8::/32"]
@@ -290,7 +281,7 @@ class TestRISFeedMock:
         update_long_path = feed.generate_update(
             timestamp=1700000001,
             prefix="203.0.113.0/24",
-            as_path=[3333, 174, 2914, 64500, 64501, 64502]
+            as_path=[3333, 174, 2914, 64500, 64501, 64502],
         )
 
         assert len(update_long_path["path"]) == 6
@@ -309,9 +300,11 @@ class TestRISFeedMockStaticMethod:
             "timestamp": 1700000000,
             "collector": "rrc00",
             "peer_asn": 3333,
-            "announcements": [{"prefixes": ["203.0.113.0/24"], "next_hop": "192.0.2.1"}],
+            "announcements": [
+                {"prefixes": ["203.0.113.0/24"], "next_hop": "192.0.2.1"}
+            ],
             "path": [3333, 64500],
-            "origin": "IGP"
+            "origin": "IGP",
         }
 
         telemetry = RISFeedMock.to_telemetry_event(update)
@@ -332,7 +325,7 @@ def test_imports() -> None:
     from simulator.feeds.bgp.ris_feed import (
         RISFeedMock,
         mock_ris_update,
-        mock_ris_withdrawal
+        mock_ris_withdrawal,
     )
 
     # Verify they can be instantiated/called
@@ -355,7 +348,7 @@ def test_example_main_execution() -> None:
         [sys.executable, "-m", "simulator.feeds.bgp.ris_feed"],
         capture_output=True,
         text=True,
-        cwd="."  # Run from project root
+        cwd=".",  # Run from project root
     )
 
     # Should execute without errors

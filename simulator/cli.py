@@ -3,16 +3,17 @@ Command-line interface for the Red Lantern BGP attack-chain simulator.
 """
 
 import argparse
-import sys
 import importlib.util
+import sys
 from pathlib import Path
 from typing import Any
+
+from simulator.engine.event_bus import EventBus
+from simulator.engine.scenario_runner import ScenarioRunner
 
 # import socket
 # import json
 
-from simulator.engine.event_bus import EventBus
-from simulator.engine.scenario_runner import ScenarioRunner
 
 
 def print_event(event: dict[str, Any]) -> None:

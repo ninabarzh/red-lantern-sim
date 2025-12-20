@@ -9,8 +9,8 @@ For simulation purposes, we generate realistic-looking RIS messages
 that match the schema and timing characteristics of real RIS data.
 """
 
-from datetime import datetime
 import json
+from datetime import datetime
 from typing import Any, Optional
 
 
@@ -209,6 +209,8 @@ if __name__ == "__main__":
     print(json.dumps(update, indent=2))
 
     # Convert to telemetry
-    telemetry = RISFeedMock.to_telemetry_event(update, scenario_name="test")  # Static call
+    telemetry = RISFeedMock.to_telemetry_event(
+        update, scenario_name="test"
+    )  # Static call
     print("\nTelemetry format:")
     print(json.dumps(telemetry, indent=2))

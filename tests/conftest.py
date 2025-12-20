@@ -1,13 +1,16 @@
 """Test configuration and fixtures."""
+
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock
-from datetime import datetime, UTC
+
 import pytest
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
 
 @pytest.fixture
 def mock_clock() -> Mock:
@@ -17,10 +20,12 @@ def mock_clock() -> Mock:
     clock.now.return_value = datetime.now(UTC)  # Timezone-aware
     return clock
 
+
 @pytest.fixture
 def current_utc_time() -> datetime:
     """Provide current UTC time for tests."""
     return datetime.now(UTC)
+
 
 @pytest.fixture
 def sample_bgp_update() -> dict[str, object]:
@@ -33,10 +38,12 @@ def sample_bgp_update() -> dict[str, object]:
         "next_hop": "198.32.176.1",
     }
 
+
 @pytest.fixture
 def european_environment():
     """Set up European environment variables."""
     import os
+
     original_collector = os.getenv("ROUTEVIEWS_COLLECTOR")
     original_peer_ip = os.getenv("ROUTEVIEWS_PEER_IP")
 

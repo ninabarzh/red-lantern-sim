@@ -7,10 +7,11 @@ future-proof generators with structured `scenario` metadata fields.
 """
 
 from typing import Any
+
 from simulator.engine.event_bus import EventBus
 from telemetry.generators.bgp_updates import BGPUpdateGenerator
-from telemetry.generators.router_syslog import RouterSyslogGenerator
 from telemetry.generators.latency_metrics import LatencyMetricsGenerator
+from telemetry.generators.router_syslog import RouterSyslogGenerator
 
 
 def register(event_bus: EventBus, clock: Any, scenario_name: str) -> None:
@@ -34,7 +35,7 @@ def register(event_bus: EventBus, clock: Any, scenario_name: str) -> None:
         clock=clock, event_bus=event_bus, scenario_name=scenario_name
     )
 
-    def on_timeline_event(event: dict[str, Any])-> None:
+    def on_timeline_event(event: dict[str, Any]) -> None:
         """
         Map scenario timeline events to structured telemetry.
         """

@@ -9,8 +9,8 @@ For simulation purposes, we generate mock change tickets that can be correlated
 with BGP events to detect unauthorised changes.
 """
 
-from datetime import datetime, timedelta, UTC
 import json
+from datetime import UTC, datetime, timedelta
 from typing import Any, Optional
 
 

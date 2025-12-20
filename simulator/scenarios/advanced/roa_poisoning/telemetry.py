@@ -7,6 +7,7 @@ All events emit fully Wazuh-ingestible JSON.
 """
 
 from typing import Any
+
 from simulator.engine.event_bus import EventBus
 from telemetry.generators.bgp_updates import BGPUpdateGenerator
 from telemetry.generators.router_syslog import RouterSyslogGenerator

@@ -12,7 +12,6 @@ subscribers.
 
 from typing import Any, Callable, Dict, List
 
-
 Event = Dict[str, Any]
 Subscriber = Callable[[Event], None]
 

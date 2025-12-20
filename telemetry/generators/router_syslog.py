@@ -7,6 +7,7 @@ Supports optional structured scenario metadata for future-proofing.
 """
 
 from typing import Any, Dict
+
 from simulator.engine.clock import SimulationClock
 from simulator.engine.event_bus import EventBus
 

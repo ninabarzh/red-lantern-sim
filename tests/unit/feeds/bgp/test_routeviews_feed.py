@@ -1,8 +1,11 @@
 """Unit tests for RouteViews feed with European defaults."""
+
 import os
-import pytest
 from unittest.mock import patch
-from simulator.feeds.bgp.routeviews_feed import RouteViewsFeedMock, EUROPEAN_COLLECTORS
+
+import pytest
+
+from simulator.feeds.bgp.routeviews_feed import EUROPEAN_COLLECTORS, RouteViewsFeedMock
 
 
 @pytest.mark.unit
@@ -22,7 +25,7 @@ class TestRouteViewsFeedMock:
         with patch.dict(os.environ, {}, clear=True):
             feed = RouteViewsFeedMock(
                 collector="route-views.linx",  # London
-                peer_ip="192.0.2.1"
+                peer_ip="192.0.2.1",
             )
             assert feed.collector == "route-views.linx"
             assert feed.peer_ip == "192.0.2.1"
@@ -50,7 +53,7 @@ class TestRouteViewsFeedMock:
                 timestamp=1700000000,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
-                next_hop="198.32.176.1"
+                next_hop="198.32.176.1",
             )
 
             assert update["type"] == "bgp4mp_message"
@@ -69,7 +72,7 @@ class TestRouteViewsFeedMock:
                 timestamp=1700000000,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
-                next_hop="198.32.176.1"
+                next_hop="198.32.176.1",
             )
 
             assert update["collector"] == "route-views.linx"  # London
@@ -85,7 +88,7 @@ class TestRouteViewsFeedMock:
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
                 next_hop="198.32.176.1",
-                attributes={"local_pref": 100, "med": 50}
+                attributes={"local_pref": 100, "med": 50},
             )
 
             assert "attributes" in update
@@ -98,8 +101,7 @@ class TestRouteViewsFeedMock:
             feed = RouteViewsFeedMock()
 
             withdrawal = feed.generate_withdrawal(
-                timestamp=1700000000,
-                prefix="203.0.113.0/24"
+                timestamp=1700000000, prefix="203.0.113.0/24"
             )
 
             assert withdrawal["type"] == "bgp4mp_message"
@@ -115,13 +117,13 @@ class TestRouteViewsFeedMock:
                 timestamp=1700000000,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
-                next_hop="198.32.176.1"
+                next_hop="198.32.176.1",
             )
 
             telemetry = RouteViewsFeedMock.to_telemetry_event(
                 routeviews_message=update,
                 scenario_name="test-scenario",
-                attack_step="announce"
+                attack_step="announce",
             )
 
             assert telemetry["event_type"] == "bgp.update"
@@ -139,7 +141,7 @@ class TestRouteViewsFeedMock:
                 timestamp=1700000000,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
-                next_hop="198.32.176.1"
+                next_hop="198.32.176.1",
                 # No collector specified - should use European default
             )
 
@@ -158,7 +160,7 @@ class TestRouteViewsFeedMock:
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
                 next_hop="198.32.176.1",
-                collector="route-views.linx"  # Specify London
+                collector="route-views.linx",  # Specify London
             )
 
             assert event["source"]["observer"] == "route-views.linx"  # Custom

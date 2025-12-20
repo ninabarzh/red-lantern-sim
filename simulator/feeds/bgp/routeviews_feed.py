@@ -35,11 +35,11 @@ class RouteViewsFeedMock:
         # Use European defaults unless specified
         self.collector = collector or os.getenv(
             "ROUTEVIEWS_COLLECTOR",
-            "route-views.amsix"  # Amsterdam Internet Exchange
+            "route-views.amsix",  # Amsterdam Internet Exchange
         )
         self.peer_ip = peer_ip or os.getenv(
             "ROUTEVIEWS_PEER_IP",
-            "193.0.0.56"  # European IP range
+            "193.0.0.56",  # European IP range
         )
 
     def generate_table_dump(
@@ -233,8 +233,7 @@ def mock_routeviews_update(
     """
     # Use provided collector or default to Amsterdam
     actual_collector = collector or os.getenv(
-        "ROUTEVIEWS_COLLECTOR",
-        "route-views.amsix"
+        "ROUTEVIEWS_COLLECTOR", "route-views.amsix"
     )
 
     feed = RouteViewsFeedMock(collector=actual_collector)
@@ -254,8 +253,7 @@ def mock_routeviews_withdrawal(
     """
     # Use provided collector or default to Amsterdam
     actual_collector = collector or os.getenv(
-        "ROUTEVIEWS_COLLECTOR",
-        "route-views.amsix"
+        "ROUTEVIEWS_COLLECTOR", "route-views.amsix"
     )
 
     feed = RouteViewsFeedMock(collector=actual_collector)
@@ -268,7 +266,7 @@ EUROPEAN_COLLECTORS = {
     "amsterdam": "route-views.amsix",
     "london": "route-views.linx",
     "frankfurt": "route-views.fra",  # If available
-    "paris": "route-views.paris",    # If available
+    "paris": "route-views.paris",  # If available
     "cape_town": "route-views.napafrica",  # Close to Europe
 }
 

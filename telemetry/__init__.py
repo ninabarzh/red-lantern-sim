@@ -10,8 +10,8 @@ Generators included:
 """
 
 from telemetry.generators.bgp_updates import BGPUpdateGenerator
-from telemetry.generators.router_syslog import RouterSyslogGenerator
 from telemetry.generators.latency_metrics import LatencyMetricsGenerator
+from telemetry.generators.router_syslog import RouterSyslogGenerator
 
 __all__ = [
     "BGPUpdateGenerator",
