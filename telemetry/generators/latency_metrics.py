@@ -6,7 +6,7 @@ Generates synthetic latency/jitter/packet loss events between routers.
 Supports optional structured scenario metadata for correlation.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from simulator.engine.clock import SimulationClock
 from simulator.engine.event_bus import EventBus

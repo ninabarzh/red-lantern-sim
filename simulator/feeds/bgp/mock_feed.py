@@ -9,7 +9,7 @@ queried by scenario telemetry to enrich events with context such as:
 - visibility across collectors
 """
 
-from typing import Any, List, Optional
+from typing import Any
 
 
 class MockBGPFeed:

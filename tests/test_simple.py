@@ -9,7 +9,7 @@ def test_import_simulator():
 
         assert True
     except ImportError as e:
-        assert False, f"Import failed: {e}"
+        raise AssertionError(f"Import failed: {e}") from None
 
 
 def test_basic_math():

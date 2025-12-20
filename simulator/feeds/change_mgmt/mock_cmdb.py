@@ -11,7 +11,7 @@ with BGP events to detect unauthorised changes.
 
 import json
 from datetime import UTC, datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 
 class MockCMDB:

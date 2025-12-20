@@ -11,7 +11,7 @@ subscribers.
 """
 
 from collections.abc import Callable
-from typing import Any, Dict, List
+from typing import Any
 
 Event = dict[str, Any]
 Subscriber = Callable[[Event], None]

@@ -11,7 +11,7 @@ formatted data, converted to our telemetry schema.
 
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 
 class RouteViewsFeedMock:

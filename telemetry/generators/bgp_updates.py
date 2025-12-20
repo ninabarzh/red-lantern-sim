@@ -6,7 +6,7 @@ This generator emits BGP UPDATE and WITHDRAW events to the EventBus.
 Future-proofed to allow optional structured scenario metadata.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from simulator.engine.clock import SimulationClock
 from simulator.engine.event_bus import EventBus

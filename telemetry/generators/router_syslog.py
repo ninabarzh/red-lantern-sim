@@ -6,7 +6,7 @@ Generates syslog events related to BGP, such as session resets and prefix limits
 Supports optional structured scenario metadata for future-proofing.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from simulator.engine.clock import SimulationClock
 from simulator.engine.event_bus import EventBus

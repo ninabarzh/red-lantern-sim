@@ -9,9 +9,6 @@ The clock does not sleep. It does not wait. It merely records and
 advances simulated time.
 """
 
-from typing import Union
-
-
 class SimulationClock:
     """
     A minimal simulated clock.
