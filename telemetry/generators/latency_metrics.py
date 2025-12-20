@@ -32,7 +32,7 @@ class LatencyMetricsGenerator:
         latency_ms: float,
         jitter_ms: float,
         packet_loss_pct: float,
-        scenario: Dict[str, Any] | None = None
+        scenario: Dict[str, Any] | None = None,
     ):
         """
         Emit a synthetic latency metrics event.
@@ -56,6 +56,7 @@ class LatencyMetricsGenerator:
                 "jitter_ms": jitter_ms,
                 "packet_loss_pct": packet_loss_pct,
             },
-            "scenario": scenario or {"name": self.scenario_name, "attack_step": None, "incident_id": None}
+            "scenario": scenario
+            or {"name": self.scenario_name, "attack_step": None, "incident_id": None},
         }
         self.event_bus.publish(event)

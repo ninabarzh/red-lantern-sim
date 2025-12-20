@@ -25,7 +25,14 @@ class BGPUpdateGenerator:
         self.event_bus = event_bus
         self.scenario_name = scenario_name
 
-    def emit_update(self, prefix: str, as_path: list[int], origin_as: int, next_hop: str, scenario: Dict[str, Any] | None = None):
+    def emit_update(
+        self,
+        prefix: str,
+        as_path: list[int],
+        origin_as: int,
+        next_hop: str,
+        scenario: Dict[str, Any] | None = None,
+    ):
         """
         Emit a BGP UPDATE event.
 
@@ -46,11 +53,14 @@ class BGPUpdateGenerator:
                 "origin_as": origin_as,
                 "next_hop": next_hop,
             },
-            "scenario": scenario or {"name": self.scenario_name, "attack_step": None, "incident_id": None}
+            "scenario": scenario
+            or {"name": self.scenario_name, "attack_step": None, "incident_id": None},
         }
         self.event_bus.publish(event)
 
-    def emit_withdraw(self, prefix: str, withdrawn_by_as: int, scenario: Dict[str, Any] | None = None):
+    def emit_withdraw(
+        self, prefix: str, withdrawn_by_as: int, scenario: Dict[str, Any] | None = None
+    ):
         """
         Emit a BGP WITHDRAW event.
 
@@ -67,7 +77,7 @@ class BGPUpdateGenerator:
                 "prefix": prefix,
                 "withdrawn_by_as": withdrawn_by_as,
             },
-            "scenario": scenario or {"name": self.scenario_name, "attack_step": None, "incident_id": None}
+            "scenario": scenario
+            or {"name": self.scenario_name, "attack_step": None, "incident_id": None},
         }
         self.event_bus.publish(event)
-

@@ -12,7 +12,13 @@ from simulator.engine.event_bus import EventBus
 
 
 class RouterSyslogGenerator:
-    def __init__(self, clock: SimulationClock, event_bus: EventBus, router_name: str, scenario_name: str):
+    def __init__(
+        self,
+        clock: SimulationClock,
+        event_bus: EventBus,
+        router_name: str,
+        scenario_name: str,
+    ):
         """
         Initialize the generator.
 
@@ -27,7 +33,14 @@ class RouterSyslogGenerator:
         self.router_name = router_name
         self.scenario_name = scenario_name
 
-    def emit(self, message: str, severity: str = "info", subsystem: str | None = None, peer_ip: str | None = None, scenario: Dict[str, Any] | None = None):
+    def emit(
+        self,
+        message: str,
+        severity: str = "info",
+        subsystem: str | None = None,
+        peer_ip: str | None = None,
+        scenario: Dict[str, Any] | None = None,
+    ):
         """
         Emit a generic syslog event.
 
@@ -49,11 +62,14 @@ class RouterSyslogGenerator:
                 "subsystem": subsystem,
                 "peer_ip": peer_ip,
             },
-            "scenario": scenario or {"name": self.scenario_name, "attack_step": None, "incident_id": None}
+            "scenario": scenario
+            or {"name": self.scenario_name, "attack_step": None, "incident_id": None},
         }
         self.event_bus.publish(event)
 
-    def prefix_limit_exceeded(self, peer_ip: str, limit: int, scenario: Dict[str, Any] | None = None):
+    def prefix_limit_exceeded(
+        self, peer_ip: str, limit: int, scenario: Dict[str, Any] | None = None
+    ):
         """
         Emit an ERROR for exceeding prefix limit.
 
@@ -67,10 +83,12 @@ class RouterSyslogGenerator:
             severity="error",
             subsystem="bgp",
             peer_ip=peer_ip,
-            scenario=scenario
+            scenario=scenario,
         )
 
-    def bgp_session_reset(self, peer_ip: str, reason: str, scenario: Dict[str, Any] | None = None):
+    def bgp_session_reset(
+        self, peer_ip: str, reason: str, scenario: Dict[str, Any] | None = None
+    ):
         """
         Emit a WARNING for BGP session reset.
 
@@ -84,10 +102,12 @@ class RouterSyslogGenerator:
             severity="warning",
             subsystem="bgp",
             peer_ip=peer_ip,
-            scenario=scenario
+            scenario=scenario,
         )
 
-    def configuration_change(self, user: str, change_summary: str, attack_step: str | None = None):
+    def configuration_change(
+        self, user: str, change_summary: str, attack_step: str | None = None
+    ):
         """
         Emit a syslog for configuration changes.
 
@@ -101,6 +121,5 @@ class RouterSyslogGenerator:
             message=message,
             severity="notice",
             subsystem="config",
-            scenario={"name": self.scenario_name, "attack_step": attack_step}
+            scenario={"name": self.scenario_name, "attack_step": attack_step},
         )
-

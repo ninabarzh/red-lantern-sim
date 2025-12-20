@@ -28,16 +28,16 @@ class MockCMDB:
         self.change_counter = 1000
 
     def create_change_ticket(
-            self,
-            change_type: str,
-            description: str,
-            requester: str,
-            start_time: datetime,
-            end_time: datetime,
-            affected_prefixes: Optional[List[str]] = None,
-            affected_systems: Optional[List[str]] = None,
-            status: str = "approved",
-            risk: str = "medium",
+        self,
+        change_type: str,
+        description: str,
+        requester: str,
+        start_time: datetime,
+        end_time: datetime,
+        affected_prefixes: Optional[List[str]] = None,
+        affected_systems: Optional[List[str]] = None,
+        status: str = "approved",
+        risk: str = "medium",
     ) -> str:
         """
         Create a mock change ticket.
@@ -76,11 +76,11 @@ class MockCMDB:
         return ticket_id
 
     def is_change_authorised(
-            self,
-            change_type: str,
-            timestamp: datetime,
-            prefix: Optional[str] = None,
-            system: Optional[str] = None,
+        self,
+        change_type: str,
+        timestamp: datetime,
+        prefix: Optional[str] = None,
+        system: Optional[str] = None,
     ) -> bool:
         """
         Check if a change is authorised at a given time.
@@ -124,9 +124,9 @@ class MockCMDB:
         return False
 
     def generate_telemetry_event(
-            self,
-            ticket_id: str,
-            scenario_name: Optional[str] = None,
+        self,
+        ticket_id: str,
+        scenario_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Generate a telemetry event for a change ticket.
@@ -193,11 +193,12 @@ class MockCMDB:
 
 # Convenience functions
 
+
 def generate_approved_bgp_change(
-        prefix: str,
-        start_offset_minutes: int = 0,
-        duration_minutes: int = 60,
-        requester: str = "network_ops",
+    prefix: str,
+    start_offset_minutes: int = 0,
+    duration_minutes: int = 60,
+    requester: str = "network_ops",
 ) -> Dict[str, Any]:
     """
     Generate an approved BGP policy change ticket.
@@ -231,10 +232,10 @@ def generate_approved_bgp_change(
 
 
 def generate_roa_change_ticket(
-        prefix: str,
-        start_offset_minutes: int = 0,
-        duration_minutes: int = 30,
-        requester: str = "security_team",
+    prefix: str,
+    start_offset_minutes: int = 0,
+    duration_minutes: int = 30,
+    requester: str = "security_team",
 ) -> Dict[str, Any]:
     """
     Generate an approved RPKI ROA change ticket.

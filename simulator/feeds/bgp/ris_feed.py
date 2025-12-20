@@ -31,13 +31,13 @@ class RISFeedMock:
         self.peer_asn = peer_asn
 
     def generate_update(
-            self,
-            timestamp: int,
-            prefix: str,
-            as_path: List[int],
-            origin: str = "IGP",
-            next_hop: Optional[str] = None,
-            communities: Optional[List[str]] = None,
+        self,
+        timestamp: int,
+        prefix: str,
+        as_path: List[int],
+        origin: str = "IGP",
+        next_hop: Optional[str] = None,
+        communities: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Generate a RIS-style BGP UPDATE message.
@@ -73,16 +73,15 @@ class RISFeedMock:
 
         if communities:
             message["communities"] = [
-                [int(c.split(":")[0]), int(c.split(":")[1])]
-                for c in communities
+                [int(c.split(":")[0]), int(c.split(":")[1])] for c in communities
             ]
 
         return message
 
     def generate_withdrawal(
-            self,
-            timestamp: int,
-            prefix: str,
+        self,
+        timestamp: int,
+        prefix: str,
     ) -> Dict[str, Any]:
         """
         Generate a RIS-style BGP WITHDRAWAL message.
@@ -106,10 +105,10 @@ class RISFeedMock:
         }
 
     def to_telemetry_event(
-            self,
-            ris_message: Dict[str, Any],
-            scenario_name: Optional[str] = None,
-            attack_step: Optional[str] = None,
+        self,
+        ris_message: Dict[str, Any],
+        scenario_name: Optional[str] = None,
+        attack_step: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Convert RIS message to Red Lantern telemetry format.
@@ -122,9 +121,7 @@ class RISFeedMock:
         Returns:
             Telemetry event compatible with Wazuh rules
         """
-        event_type = (
-            "bgp.update" if ris_message["type"] == "UPDATE" else "bgp.withdraw"
-        )
+        event_type = "bgp.update" if ris_message["type"] == "UPDATE" else "bgp.withdraw"
 
         attributes: Dict[str, Any] = {}
 
@@ -171,12 +168,13 @@ class RISFeedMock:
 
 # Convenience functions for direct use
 
+
 def mock_ris_update(
-        timestamp: int,
-        prefix: str,
-        as_path: List[int],
-        collector: str = "rrc00",
-        **kwargs,
+    timestamp: int,
+    prefix: str,
+    as_path: List[int],
+    collector: str = "rrc00",
+    **kwargs,
 ) -> Dict[str, Any]:
     """Generate a mock RIS UPDATE in telemetry format."""
     feed = RISFeedMock(collector=collector)
@@ -185,9 +183,9 @@ def mock_ris_update(
 
 
 def mock_ris_withdrawal(
-        timestamp: int,
-        prefix: str,
-        collector: str = "rrc00",
+    timestamp: int,
+    prefix: str,
+    collector: str = "rrc00",
 ) -> Dict[str, Any]:
     """Generate a mock RIS WITHDRAWAL in telemetry format."""
     feed = RISFeedMock(collector=collector)

@@ -20,7 +20,11 @@ class RouteViewsFeedMock:
     Produces BGP messages in a format similar to RouteViews collectors.
     """
 
-    def __init__(self, collector: str = "route-views.oregon-ix.net", peer_ip: str = "198.32.176.1"):
+    def __init__(
+        self,
+        collector: str = "route-views.oregon-ix.net",
+        peer_ip: str = "198.32.176.1",
+    ):
         """
         Args:
             collector: RouteViews collector hostname
@@ -30,14 +34,14 @@ class RouteViewsFeedMock:
         self.peer_ip = peer_ip
 
     def generate_table_dump(
-            self,
-            timestamp: int,
-            prefix: str,
-            as_path: List[int],
-            next_hop: str,
-            local_pref: Optional[int] = None,
-            med: Optional[int] = None,
-            atomic_aggregate: bool = False,
+        self,
+        timestamp: int,
+        prefix: str,
+        as_path: List[int],
+        next_hop: str,
+        local_pref: Optional[int] = None,
+        med: Optional[int] = None,
+        atomic_aggregate: bool = False,
     ) -> Dict[str, Any]:
         """
         Generate a RouteViews routing table entry.
@@ -75,12 +79,12 @@ class RouteViewsFeedMock:
         return entry
 
     def generate_update(
-            self,
-            timestamp: int,
-            prefix: str,
-            as_path: List[int],
-            next_hop: str,
-            attributes: Optional[Dict[str, Any]] = None,
+        self,
+        timestamp: int,
+        prefix: str,
+        as_path: List[int],
+        next_hop: str,
+        attributes: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Generate a RouteViews BGP UPDATE message.
@@ -113,9 +117,9 @@ class RouteViewsFeedMock:
         return message
 
     def generate_withdrawal(
-            self,
-            timestamp: int,
-            prefix: str,
+        self,
+        timestamp: int,
+        prefix: str,
     ) -> Dict[str, Any]:
         """
         Generate a RouteViews BGP WITHDRAWAL message.
@@ -137,10 +141,10 @@ class RouteViewsFeedMock:
         }
 
     def to_telemetry_event(
-            self,
-            routeviews_message: Dict[str, Any],
-            scenario_name: Optional[str] = None,
-            attack_step: Optional[str] = None,
+        self,
+        routeviews_message: Dict[str, Any],
+        scenario_name: Optional[str] = None,
+        attack_step: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Convert RouteViews message to Red Lantern telemetry format.
@@ -204,13 +208,14 @@ class RouteViewsFeedMock:
 
 # Convenience functions
 
+
 def mock_routeviews_update(
-        timestamp: int,
-        prefix: str,
-        as_path: List[int],
-        next_hop: str,
-        collector: str = "route-views.oregon-ix.net",
-        **kwargs,
+    timestamp: int,
+    prefix: str,
+    as_path: List[int],
+    next_hop: str,
+    collector: str = "route-views.oregon-ix.net",
+    **kwargs,
 ) -> Dict[str, Any]:
     """Generate a mock RouteViews UPDATE in telemetry format."""
     feed = RouteViewsFeedMock(collector=collector)
@@ -219,9 +224,9 @@ def mock_routeviews_update(
 
 
 def mock_routeviews_withdrawal(
-        timestamp: int,
-        prefix: str,
-        collector: str = "route-views.oregon-ix.net",
+    timestamp: int,
+    prefix: str,
+    collector: str = "route-views.oregon-ix.net",
 ) -> Dict[str, Any]:
     """Generate a mock RouteViews WITHDRAWAL in telemetry format."""
     feed = RouteViewsFeedMock(collector=collector)

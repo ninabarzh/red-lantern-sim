@@ -24,9 +24,15 @@ def register(event_bus: EventBus, clock, scenario_name: str):
     """
 
     # Initialize generators
-    bgp_gen = BGPUpdateGenerator(clock=clock, event_bus=event_bus, scenario_name=scenario_name)
-    syslog_gen = RouterSyslogGenerator(clock=clock, event_bus=event_bus, router_name="R1", scenario_name=scenario_name)
-    latency_gen = LatencyMetricsGenerator(clock=clock, event_bus=event_bus, scenario_name=scenario_name)
+    bgp_gen = BGPUpdateGenerator(
+        clock=clock, event_bus=event_bus, scenario_name=scenario_name
+    )
+    syslog_gen = RouterSyslogGenerator(
+        clock=clock, event_bus=event_bus, router_name="R1", scenario_name=scenario_name
+    )
+    latency_gen = LatencyMetricsGenerator(
+        clock=clock, event_bus=event_bus, scenario_name=scenario_name
+    )
 
     def on_timeline_event(event: dict[str, Any]):
         """
@@ -45,7 +51,11 @@ def register(event_bus: EventBus, clock, scenario_name: str):
         incident_id = f"{scenario_name}-{prefix}"
 
         if action == "announce":
-            scenario_meta = {"name": scenario_name, "attack_step": "misorigin", "incident_id": incident_id}
+            scenario_meta = {
+                "name": scenario_name,
+                "attack_step": "misorigin",
+                "incident_id": incident_id,
+            }
 
             # Emit BGP update
             bgp_gen.emit_update(
@@ -53,7 +63,7 @@ def register(event_bus: EventBus, clock, scenario_name: str):
                 as_path=[65002],
                 origin_as=65002,
                 next_hop="192.0.2.1",
-                scenario=scenario_meta
+                scenario=scenario_meta,
             )
 
             # Emit syslog for RIB add (notice)
@@ -62,17 +72,25 @@ def register(event_bus: EventBus, clock, scenario_name: str):
                 severity="notice",
                 subsystem="bgp",
                 peer_ip="192.0.2.1",
-                scenario=scenario_meta
+                scenario=scenario_meta,
             )
 
             # Emit prefix-limit error (structured as misorigin)
-            syslog_gen.prefix_limit_exceeded(peer_ip="192.0.2.1", limit=100, scenario=scenario_meta)
+            syslog_gen.prefix_limit_exceeded(
+                peer_ip="192.0.2.1", limit=100, scenario=scenario_meta
+            )
 
         elif action == "withdraw":
-            scenario_meta = {"name": scenario_name, "attack_step": "withdrawal", "incident_id": incident_id}
+            scenario_meta = {
+                "name": scenario_name,
+                "attack_step": "withdrawal",
+                "incident_id": incident_id,
+            }
 
             # Emit BGP withdraw
-            bgp_gen.emit_withdraw(prefix=prefix, withdrawn_by_as=65002, scenario=scenario_meta)
+            bgp_gen.emit_withdraw(
+                prefix=prefix, withdrawn_by_as=65002, scenario=scenario_meta
+            )
 
             # Emit syslog for withdrawal (info)
             syslog_gen.emit(
@@ -80,11 +98,15 @@ def register(event_bus: EventBus, clock, scenario_name: str):
                 severity="info",
                 subsystem="bgp",
                 peer_ip="192.0.2.1",
-                scenario=scenario_meta
+                scenario=scenario_meta,
             )
 
         elif action == "latency_spike":
-            scenario_meta = {"name": scenario_name, "attack_step": "latency_spike", "incident_id": incident_id}
+            scenario_meta = {
+                "name": scenario_name,
+                "attack_step": "latency_spike",
+                "incident_id": incident_id,
+            }
 
             latency_gen.emit(
                 source_router="R1",
@@ -92,7 +114,7 @@ def register(event_bus: EventBus, clock, scenario_name: str):
                 latency_ms=150.0,
                 jitter_ms=15.0,
                 packet_loss_pct=0.1,
-                scenario=scenario_meta
+                scenario=scenario_meta,
             )
 
     # Subscribe to all timeline events
