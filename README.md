@@ -210,17 +210,80 @@ sudo tail -f /var/ossec/logs/ossec.log
 ```
 
 You won't see the events in `ossec.log` - that only shows service startup/shutdown messages. To see your actual BGP 
-events being processed, check the archives:
+events being processed, check the archives or manually check logs:
 
 ```bash
-sudo tail -f /var/ossec/logs/archives/archives.log
+$ head -3 /var/log/red-lantern/bgp.log | sudo /var/ossec/bin/wazuh-logtest
+Starting wazuh-logtest v4.14.1
+Type one log per line
+
+
+**Phase 1: Completed pre-decoding.
+        full event: '{"timestamp": 0, "scenario_id": "fat-finger-hijack", "entry": {"t": 0, "action": "start"}}'
+
+**Phase 2: Completed decoding.
+        name: 'json'
+        entry.action: 'start'
+        entry.t: '0'
+        scenario_id: 'fat-finger-hijack'
+        timestamp: '0'
+
+
+**Phase 1: Completed pre-decoding.
+        full event: '{"timestamp": 10, "scenario_id": "fat-finger-hijack", "entry": {"t": 10, "action": "announce", "prefix": "203.0.113.0/24", "attacker_as": 65002, "victim_as": 65001, "note": "Exact-prefix announcement, looks like operator error"}}'
+
+**Phase 2: Completed decoding.
+        name: 'json'
+        entry.action: 'announce'
+        entry.attacker_as: '65002'
+        entry.note: 'Exact-prefix announcement, looks like operator error'
+        entry.prefix: '203.0.113.0/24'
+        entry.t: '10'
+        entry.victim_as: '65001'
+        scenario_id: 'fat-finger-hijack'
+        timestamp: '10'
+
+**Phase 3: Completed filtering (rules).
+        id: '1002'
+        level: '2'
+        description: 'Unknown problem somewhere in the system.'
+        groups: '['syslog', 'errors']'
+        firedtimes: '1'
+        gpg13: '['4.3']'
+        mail: 'False'
+
+
+**Phase 1: Completed pre-decoding.
+
+**Phase 2: Completed decoding.
+        name: 'json'
+        attributes.as_path: '[65002]'
+        attributes.next_hop: '192.0.2.1'
+        attributes.origin_as: '65002'
+        attributes.prefix: '203.0.113.0/24'
+        event_type: 'bgp.update'
+        scenario.attack_step: 'misorigin'
+        scenario.incident_id: 'fat-finger-hijack-203.0.113.0/24'
+        scenario.name: 'fat-finger-hijack'
+        source.feed: 'mock'
+        source.observer: 'simulator'
+        timestamp: '10'
+
+**Phase 3: Completed filtering (rules).
+        id: '86600'
+        level: '0'
+        description: 'Suricata messages.'
+        groups: '['ids', 'suricata']'
+        firedtimes: '1'
+        mail: 'False'
 ```
 
-Or check if any alerts were generated:
+The BGP events are matching generic/irrelevant rules:
 
-```bash
-sudo tail -f /var/ossec/logs/alerts/alerts.log
-```
+- Rule 1002: "Unknown problem somewhere in the system" (generic error rule)
+- Rule 86600: "Suricata messages" (IDS rule - wrong category!)
+
+That is correct. Custom Decoders & Rules have not been installed yet. See below.
 
 ### Alternative: Use a separate machine for the agent
 
@@ -257,27 +320,36 @@ Wrap simulator output in syslog framing and send to the Wazuh agent or manager.
 
 Use Filebeat JSON input pointing at the simulator output.
 
-### Wazuh decoders
+## Installing the custom decoders & rules
 
-Custom decoders live under [wazuh/decoders/](wazuh/decoders).
+### Install the BGP Decoders
 
-Example:
-
-* `bgp_decoders.xml`
-
-These decoders:
+Custom decoders live under [wazuh/decoders/](wazuh/decoders) in the repo. These decoders assume structured JSON, 
+not regex soup. They:
 
 * Match on `event_type`
 * Extract fields under `attributes.*`
 * Normalise fields for rule matching
 
-They assume structured JSON, not regex soup.
+#### Install manually
 
-### Wazuh rules (signals)
+```bash
+sudo nano /var/ossec/etc/decoders/local_decoder.xml
+```
 
-Rules live under [wazuh/rules/](wazuh/rules).
+Copy and paste the entire content from `bgp_decoders.xml` (the full decoder file I just fetched). Then save (Ctrl+X, Y, Enter).
 
-Example signals:
+#### Or use wget directly
+
+```bash
+cd /var/ossec/etc/decoders/
+sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/decoders/bgp_decoders.xml -O local_decoder.xml
+```
+
+### Install the three signal rule files
+
+Some predefined rules for the initial three scenarios live under [wazuh/rules/](wazuh/rules) in the repo. These rules 
+correlate multiple events over time, not single log lines. Example signals:
 
 * Route misorigin detection
 * More-specific prefix hijacks
@@ -285,7 +357,65 @@ Example signals:
 * Route flapping and noise masking
 * Blackhole community abuse
 
-These rules correlate multiple events over time, not single log lines.
+For Signal One (Fat-Finger Hijacks):
+
+```bash
+cd /var/ossec/etc/rules/
+sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_one.xml -O bgp_signal_one.xml
+```
+
+For Signal Two (Subprefix Interception):
+
+```bash
+sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_two.xml -O bgp_signal_two.xml
+```
+
+For Signal Three (Control-Plane Poisoning):
+
+```bash
+sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_three.xml -O bgp_signal_three.xml
+```
+
+### Checks
+
+Verify the files:
+
+```bash
+ls -lh /var/ossec/etc/decoders/local_decoder.xml
+ls -lh /var/ossec/etc/rules/bgp_signal_*.xml
+```
+
+Test configuration syntax:
+
+```bash
+sudo /var/ossec/bin/wazuh-logtest -t
+```
+
+Restart Wazuh Manager:
+
+```bash
+sudo systemctl restart wazuh-manager
+```
+
+Check status:
+
+```bash
+sudo systemctl status wazuh-manager
+```
+
+Test with events
+
+```bash
+head -5 /var/log/red-lantern/bgp.log | sudo /var/ossec/bin/wazuh-logtest
+```
+
+Now you should see your custom rules like:
+
+- **Rule 100001**: BGP UPDATE detected
+- **Rule 100002**: BGP WITHDRAW detected  
+- **Rule 100008**: Prefix limit exceeded (from signal_one.xml)
+
+These are the actual decoders and rules designed for the simulator! 
 
 ### Alerts and analysis
 
