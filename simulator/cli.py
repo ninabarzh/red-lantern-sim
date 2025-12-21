@@ -15,7 +15,6 @@ from simulator.engine.scenario_runner import ScenarioRunner
 # import json
 
 
-
 def print_event(event: dict[str, Any]) -> None:
     """Default event handler: dump everything to stdout."""
     print(event)

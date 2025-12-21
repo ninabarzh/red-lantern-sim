@@ -41,6 +41,61 @@ markers = [
     "slow: tests that take longer to run",
 ]
 
+[tool.coverage.run]
+# Measure coverage for all source code
+source = ["."]
+
+# Exclude test files and other non-source code
+omit = [
+    "*/tests/*",           # Don't measure test files
+    "*/test_*.py",         # Also catch test files not in tests/ directory
+    "*_test.py",           # Alternative test file naming
+    "*/__pycache__/*",     # Cache files
+    "*/\\.venv/*",         # Virtual environments
+    "*/venv/*",            # Alternative venv location
+    "*/.mypy_cache/*",     # Type checking cache
+    "*/build/*",           # Build artifacts
+    "*/dist/*",            # Distribution files
+    "*/\\.git/*",          # Git directory
+    "*/\\.pytest_cache/*", # Pytest cache
+    "*/__init__.py",       # Exclude all __init__.py files
+]
+
+[tool.coverage.report]
+# Fail if overall coverage drops below 90%
+fail_under = 90
+
+# Show missing lines in terminal
+show_missing = true
+
+# Exclude certain lines from coverage reporting
+exclude_lines = [
+    "pragma: no cover",           # Manual exclusions
+    "def __repr__",               # Usually trivial string methods
+    "def __str__",                # String representations
+    "raise NotImplementedError",  # Abstract methods
+    "if TYPE_CHECKING:",          # Type checking only imports
+    "@property",                  # Simple properties
+    "pass",                       # Empty implementations
+    "logger\\.",                  # Logging statements
+    "print\\(",                   # Print statements (debug)
+    "# type: ignore",             # Type ignore comments
+    "# TODO:",                    # TODO comments
+    "# FIXME:",                   # FIXME comments
+    "# noqa",                     # Linter ignores
+    "if __name__ == .__main__.:", # Main guards
+]
+
+[tool.coverage.html]
+# HTML report settings
+directory = "htmlcov"
+title = "Red Lantern Simulator Coverage Report"
+extra_css = ""
+
+[tool.coverage.xml]
+# XML report for CI/CD tools
+output = "coverage.xml"
+
 [tool.ruff]
 # These are core settings for both linting and formatting
 line-length = 88
