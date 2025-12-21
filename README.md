@@ -331,19 +331,8 @@ not regex soup. They:
 * Extract fields under `attributes.*`
 * Normalise fields for rule matching
 
-#### Install manually
-
 ```bash
-sudo nano /var/ossec/etc/decoders/local_decoder.xml
-```
-
-Copy and paste the entire content from `bgp_decoders.xml` (the full decoder file I just fetched). Then save (Ctrl+X, Y, Enter).
-
-#### Or use wget directly
-
-```bash
-cd /var/ossec/etc/decoders/
-sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/decoders/bgp_decoders.xml -O local_decoder.xml
+sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/decoders/bgp_decoders.xml -O /var/ossec/etc/decoders/local_decoder.xml
 ```
 
 ### Install the three signal rule files
@@ -360,20 +349,19 @@ correlate multiple events over time, not single log lines. Example signals:
 For Signal One (Fat-Finger Hijacks):
 
 ```bash
-cd /var/ossec/etc/rules/
-sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_one.xml -O bgp_signal_one.xml
+sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_one.xml -O /var/ossec/etc/rules/bgp_signal_one.xml
 ```
 
 For Signal Two (Subprefix Interception):
 
 ```bash
-sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_two.xml -O bgp_signal_two.xml
+sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_two.xml -O /var/ossec/etc/rules/bgp_signal_two.xml
 ```
 
 For Signal Three (Control-Plane Poisoning):
 
 ```bash
-sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_three.xml -O bgp_signal_three.xml
+sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads/main/wazuh/rules/signal_three.xml -O /var/ossec/etc/rules/bgp_signal_three.xml
 ```
 
 ### Checks
@@ -381,14 +369,10 @@ sudo wget https://raw.githubusercontent.com/ninabarzh/red-lantern-sim/refs/heads
 Verify the files:
 
 ```bash
-ls -lh /var/ossec/etc/decoders/local_decoder.xml
-ls -lh /var/ossec/etc/rules/bgp_signal_*.xml
-```
-
-Test configuration syntax:
-
-```bash
-sudo /var/ossec/bin/wazuh-logtest -t
+sudo ls -lh /var/ossec/etc/decoders/local_decoder.xml
+sudo ls -lh /var/ossec/etc/rules/bgp_signal_one.xml
+sudo ls -lh /var/ossec/etc/rules/bgp_signal_two.xml
+sudo ls -lh /var/ossec/etc/rules/bgp_signal_three.xml
 ```
 
 Restart Wazuh Manager:
@@ -403,7 +387,7 @@ Check status:
 sudo systemctl status wazuh-manager
 ```
 
-Test with events
+Test with events:
 
 ```bash
 head -5 /var/log/red-lantern/bgp.log | sudo /var/ossec/bin/wazuh-logtest
