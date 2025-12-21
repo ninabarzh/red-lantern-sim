@@ -2,6 +2,7 @@
 Unit tests for simulator.cli module.
 """
 
+import json
 import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -20,11 +21,15 @@ class TestPrintEvent:
     """Tests for print_event function."""
 
     def test_print_event_outputs_to_stdout(self, capsys):
-        """Test that print_event outputs the event dict to stdout."""
+        """Test that print_event outputs the event dict to stdout as JSON."""
         event = {"type": "test", "data": "value"}
         print_event(event)
         captured = capsys.readouterr()
-        assert str(event) in captured.out
+        # Check for JSON format instead of Python dict repr
+        assert '"type"' in captured.out
+        assert '"test"' in captured.out
+        assert '"data"' in captured.out
+        assert '"value"' in captured.out
 
     def test_print_event_handles_empty_dict(self, capsys):
         """Test print_event with empty dictionary."""
@@ -513,11 +518,12 @@ class TestEdgeCases:
     """Edge case tests for CLI module."""
 
     def test_print_event_with_none_values(self, capsys):
-        """Test print_event handles None values in dict."""
+        """Test print_event handles None values in dict (outputs as JSON null)."""
         event = {"key": None, "nested": {"value": None}}
         print_event(event)
         captured = capsys.readouterr()
-        assert "None" in captured.out
+        # JSON represents None as null
+        assert "null" in captured.out
 
     def test_print_event_with_large_event(self, capsys):
         """Test print_event handles large events."""

@@ -4,6 +4,7 @@ Command-line interface for the Red Lantern BGP attack-chain simulator.
 
 import argparse
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -12,12 +13,11 @@ from simulator.engine.event_bus import EventBus
 from simulator.engine.scenario_runner import ScenarioRunner
 
 # import socket
-# import json
 
 
 def print_event(event: dict[str, Any]) -> None:
-    """Default event handler: dump everything to stdout."""
-    print(event)
+    """Default event handler: dump everything to stdout as proper JSON."""
+    print(json.dumps(event))
 
 
 # def send_to_wazuh(event):

@@ -148,12 +148,13 @@ deployment:
 
 No customisation needed at this stage.
 
-If you want Wazuh on the same machine where you want to run the simulator, you do not need an agent. 
-Alternatively, you install the agent and simulator on another machine.
+If you want Wazuh on the same machine where you want to run the simulator, you do not need an agent. The manager can 
+monitor local files directly. Alternatively, you install the agent and simulator on another machine.
 
 ### All-in-one deployment
 
-The manager can monitor local files directly.
+It is simpler and accomplishes exactly what you want: getting your simulator's JSON events into Wazuh for decoder/rule 
+testing. 
 
 1. Create the log directory:
 
@@ -170,7 +171,7 @@ Edit the manager's `ossec.conf`:
 sudo nano /var/ossec/etc/ossec.conf
 ```
 
-Add this inside the `<ossec_config>` section:
+Add this inside the `<ossec_config>` section (localfiles are at the bottom):
 
 ```xml
 <localfile>
@@ -188,6 +189,7 @@ sudo systemctl restart wazuh-manager
 Run the simulator, for example:
 
 ```bash
+sudo chown -R $USER:$USER /var/log/red-lantern
 python -m simulator.cli simulator/scenarios/easy/fat_finger_hijack/scenario.yaml > /var/log/red-lantern/bgp.log
 ```
 
@@ -197,6 +199,27 @@ Check that events are being processed:
 
 ```bash
 sudo tail -f /var/ossec/logs/ossec.log
+...[snip]
+2025/12/21 12:18:33 wazuh-logcollector: INFO: (1950): Analyzing file: '/var/log/red-lantern/bgp.log'.
+...[snip]
+2025/12/21 12:18:39 wazuh-syscheckd: INFO: (6009): File integrity monitoring scan ended.
+2025/12/21 12:18:39 wazuh-syscheckd: INFO: FIM sync module started.
+2025/12/21 12:18:41 sca: INFO: Evaluation finished for policy '/var/ossec/ruleset/sca/cis_ubuntu24-04.yml'
+2025/12/21 12:18:41 sca: INFO: Security Configuration Assessment scan finished. Duration: 6 seconds.
+2025/12/21 12:20:30 rootcheck: INFO: Ending rootcheck scan.
+```
+
+You won't see the events in `ossec.log` - that only shows service startup/shutdown messages. To see your actual BGP 
+events being processed, check the archives:
+
+```bash
+sudo tail -f /var/ossec/logs/archives/archives.log
+```
+
+Or check if any alerts were generated:
+
+```bash
+sudo tail -f /var/ossec/logs/alerts/alerts.log
 ```
 
 ### Alternative: Use a separate machine for the agent
