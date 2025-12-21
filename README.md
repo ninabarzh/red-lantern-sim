@@ -138,9 +138,9 @@ All emitted events are:
 
 ## Minimal Wazuh integration approach
 
-### 1. Install Wazuh
-
-Follow the [official quickstart](https://documentation.wazuh.com/current/quickstart.html) for a single-node deployment:
+[Install Wazuh](https://documentation.wazuh.com/current/installation-guide/index.html). For a minimal Wazuh on a 
+localhost, follow the [official quickstart](https://documentation.wazuh.com/current/quickstart.html) for a single-node 
+deployment:
 
 * Wazuh Manager
 * Filebeat
@@ -148,11 +148,76 @@ Follow the [official quickstart](https://documentation.wazuh.com/current/quickst
 
 No customisation needed at this stage.
 
-### 2. Ingest simulator output
+If you want Wazuh on the same machine where you want to run the simulator, you do not need an agent. 
+Alternatively, you install the agent and simulator on another machine.
+
+### All-in-one deployment
+
+The manager can monitor local files directly.
+
+1. Create the log directory:
+
+```bash
+sudo mkdir -p /var/log/red-lantern
+sudo chmod 755 /var/log/red-lantern
+```
+
+2. Configure the Wazuh Manager to monitor the file
+
+Edit the manager's `ossec.conf`:
+
+```bash
+sudo nano /var/ossec/etc/ossec.conf
+```
+
+Add this inside the `<ossec_config>` section:
+
+```xml
+<localfile>
+  <log_format>json</log_format>
+  <location>/var/log/red-lantern/bgp.log</location>
+</localfile>
+```
+
+3. Restart the Wazuh Manager
+
+```bash
+sudo systemctl restart wazuh-manager
+```
+
+Run the simulator, for example:
+
+```bash
+python -m simulator.cli simulator/scenarios/easy/fat_finger_hijack/scenario.yaml > /var/log/red-lantern/bgp.log
+```
+
+5. Verify ingestion:
+
+Check that events are being processed:
+
+```bash
+sudo tail -f /var/ossec/logs/ossec.log
+```
+
+### Alternative: Use a separate machine for the agent
+
+If you want to practice the full agent-manager architecture:
+
+1. Keep the manager on your current machine (localhost)
+2. Install the agent on a different machine (VM, container, or another physical machine)
+3. Point the agent to your manager's IP address (not 127.0.0.1, but your actual network IP)
+
+To find your machine's IP:
+
+```bash
+ip addr show | grep "inet "
+```
+
+### Ingest simulator output
 
 There are three common approaches:
 
-#### Option: Pipe simulator output to a file
+#### Option 1: Pipe simulator output to a file
 
 ```bash
 python -m simulator.cli simulator/scenarios/easy/fat_finger_hijack/scenario.yaml \
@@ -161,15 +226,15 @@ python -m simulator.cli simulator/scenarios/easy/fat_finger_hijack/scenario.yaml
 
 Configure the Wazuh agent to monitor that file as JSON.
 
-#### Option: Forward via syslog
+#### Option 2: Forward via syslog
 
 Wrap simulator output in syslog framing and send to the Wazuh agent or manager.
 
-#### Option: Inject via Filebeat
+#### Option 3: Inject via Filebeat
 
 Use Filebeat JSON input pointing at the simulator output.
 
-### 3. Wazuh decoders
+### Wazuh decoders
 
 Custom decoders live under [wazuh/decoders/](wazuh/decoders).
 
@@ -185,7 +250,7 @@ These decoders:
 
 They assume structured JSON, not regex soup.
 
-### 4. Wazuh rules (signals)
+### Wazuh rules (signals)
 
 Rules live under [wazuh/rules/](wazuh/rules).
 
@@ -199,7 +264,7 @@ Example signals:
 
 These rules correlate multiple events over time, not single log lines.
 
-### 5. Alerts and analysis
+### Alerts and analysis
 
 Once ingested:
 
@@ -225,7 +290,7 @@ These feeds:
 
 They exist to keep the simulator architecture-realistic, not to fake the internet.
 
-## Why this exists
+## Why this simulator exists
 
 This simulator creates boring, realistic logs so defenders can practise noticing when boring suddenly is not.
 
