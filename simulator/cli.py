@@ -8,7 +8,11 @@ import json
 from typing import Any, List
 
 from simulator.engine.event_bus import EventBus
+from simulator.engine.clock import SimulationClock
 from simulator.engine.scenario_runner import ScenarioRunner
+from simulator.engine.simulation_engine import run_with_background
+from simulator.feeds.bgp.bgp_noise_feed import BGPNoiseFeed
+from simulator.feeds.change_mgmt.cmdb_noise_feed import CMDBNoiseFeed
 from simulator.output.adapter import ScenarioAdapter
 
 
@@ -42,6 +46,23 @@ def main(argv: list[str] | None = None) -> int | None:
         default=Path("scenario_output.json"),
         help="Path to JSON output file if --output=json",
     )
+    parser.add_argument(
+        "--background",
+        action="store_true",
+        help="Enable background noise feeds (BGP churn, CMDB changes)",
+    )
+    parser.add_argument(
+        "--bgp-noise-rate",
+        type=float,
+        default=0.5,
+        help="BGP updates per second (default: 0.5)",
+    )
+    parser.add_argument(
+        "--cmdb-noise-rate",
+        type=float,
+        default=0.1,
+        help="CMDB changes per second (default: 0.1)",
+    )
 
     args = parser.parse_args(argv)
 
@@ -49,7 +70,9 @@ def main(argv: list[str] | None = None) -> int | None:
         print(f"Scenario file not found: {args.scenario}", file=sys.stderr)
         return 1
 
+    # Initialize components
     event_bus = EventBus()
+    clock = SimulationClock()
     adapter = ScenarioAdapter()
 
     transformed_lines: List[str] = []
@@ -68,19 +91,19 @@ def main(argv: list[str] | None = None) -> int | None:
 
             event_record = {"line": line}
             if args.mode == "training":
-                event_record["original_event"] = event  # include scenario metadata only in training mode
+                event_record["original_event"] = event
 
-            # Only append lines that pass the mode filter
             transformed_lines.append(line)
-            transformed_events.append(event_record)  # optional: keep original_event if desired
+            transformed_events.append(event_record)
 
             if args.output == "cli":
                 print(line)
 
     event_bus.subscribe(handle_event)
 
-    # Load and run scenario
+    # Load scenario
     runner = ScenarioRunner(scenario_path=args.scenario, event_bus=event_bus)
+    runner.clock = clock  # Share the clock
 
     try:
         runner.load()
@@ -104,16 +127,36 @@ def main(argv: list[str] | None = None) -> int | None:
         if not hasattr(module, "register"):
             print(f"{telemetry_path} does not define register()", file=sys.stderr)
             return 2
-        module.register(event_bus=event_bus, clock=runner.clock, scenario_name=runner.scenario.get("id"))
+        module.register(event_bus=event_bus, clock=clock, scenario_name=runner.scenario.get("id"))
 
+    # Run simulation
     try:
-        runner.run()
+        if args.background:
+            # Create background feeds
+            background_feeds = [
+                BGPNoiseFeed(update_rate=args.bgp_noise_rate),
+                CMDBNoiseFeed(change_rate=args.cmdb_noise_rate),
+            ]
+
+            if args.output == "cli":
+                print(
+                    f"[INFO] Background noise enabled: "
+                    f"{args.bgp_noise_rate} BGP updates/sec, "
+                    f"{args.cmdb_noise_rate} CMDB changes/sec",
+                    file=sys.stderr
+                )
+
+            # Run with background noise
+            run_with_background(runner, background_feeds, event_bus, clock)
+        else:
+            # Run scenario only (original behavior)
+            runner.run()
+
     except Exception as exc:
         print(f"Simulation failed: {exc}", file=sys.stderr)
         return 3
 
     # Dump JSON output if requested
-
     if args.output == "json":
         try:
             args.json_file.parent.mkdir(parents=True, exist_ok=True)
