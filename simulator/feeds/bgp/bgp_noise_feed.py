@@ -51,22 +51,24 @@ class BGPNoiseFeed(BackgroundFeed):
             # Random timestamp within duration
             timestamp = rng.randint(0, duration)
 
-            # Generate realistic BGP update
+            # Generate realistic BGP update matching RouterAdapter's expected structure
             event_data = {
+                "event_type": "bgp.update",
                 "source": "bgp_noise",
-                "event_type": "bgp_update",
-                "prefix": self._random_prefix(rng),
-                "origin_as": rng.randint(1000, 65000),
-                "as_path": self._random_as_path(rng),
-                "update_type": rng.choice(["announce", "withdraw"]),
-                "collector": rng.choice(["routeviews", "ris"]),
+                "attributes": {
+                    "prefix": self._random_prefix(rng),
+                    "origin_as": rng.randint(1000, 65000),
+                    "as_path": self._random_as_path(rng),
+                    "next_hop": f"192.0.2.{rng.randint(1, 254)}",
+                }
             }
 
             events.append((timestamp, event_data))
 
         return sorted(events, key=lambda x: x[0])
 
-    def _random_prefix(self, rng: random.Random) -> str:
+    @staticmethod
+    def _random_prefix(rng: random.Random) -> str:
         """Generate a random IP prefix."""
         octet1 = rng.randint(1, 223)
         octet2 = rng.randint(0, 255)
@@ -74,7 +76,8 @@ class BGPNoiseFeed(BackgroundFeed):
         prefix_len = rng.choice([24, 23, 22, 21, 20, 19, 16])
         return f"{octet1}.{octet2}.{octet3}.0/{prefix_len}"
 
-    def _random_as_path(self, rng: random.Random) -> list[int]:
+    @staticmethod
+    def _random_as_path(rng: random.Random) -> list[int]:
         """Generate a random AS path."""
         path_length = rng.randint(2, 6)
         return [rng.randint(1000, 65000) for _ in range(path_length)]

@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 import json
 from typing import Any, List
+import signal
 
 from simulator.engine.event_bus import EventBus
 from simulator.engine.clock import SimulationClock
@@ -169,4 +170,6 @@ def main(argv: list[str] | None = None) -> int | None:
 
 
 if __name__ == "__main__":
+
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # Ignore broken pipe
     sys.exit(main())

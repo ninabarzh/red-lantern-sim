@@ -59,22 +59,23 @@ class CMDBNoiseFeed(BackgroundFeed):
                 "system_restart",
             ])
 
-            # Generate realistic change event
-            event_data = {
-                "source": "cmdb_noise",
-                "event_type": "configuration_change",
-                "change_type": change_type,
-                "asset": f"router-{rng.randint(1, 50):03d}",
-                "operator": rng.choice(["alice", "bob", "charlie", "automation"]),
-                "approved": rng.random() > 0.1,  # 90% approved
-            }
+            # Generate files changed
+            num_files = rng.randint(1, 5)
+            files_changed = [
+                f"/etc/router/config_{rng.randint(1, 100)}.conf"
+                for _ in range(num_files)
+            ]
 
-            # Add type-specific details
-            if change_type == "software_update":
-                event_data["from_version"] = f"9.{rng.randint(0, 5)}.{rng.randint(0, 9)}"
-                event_data["to_version"] = f"9.{rng.randint(0, 5)}.{rng.randint(0, 9)}"
-            elif change_type == "config_change":
-                event_data["config_section"] = rng.choice(["bgp", "ospf", "acl", "interface"])
+            # Generate realistic change event matching CMDBAdapter's expected structure
+            event_data = {
+                "event_type": "cmdb.change",
+                "source": "cmdb_noise",
+                "attributes": {
+                    "actor": rng.choice(["alice", "bob", "charlie", "automation"]),
+                    "files_changed": files_changed,
+                    "change_type": change_type,
+                }
+            }
 
             events.append((timestamp, event_data))
 
