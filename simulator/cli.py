@@ -19,7 +19,9 @@ from simulator.output.adapter import ScenarioAdapter
 
 def main(argv: list[str] | None = None) -> int | None:
     parser = argparse.ArgumentParser(
-        description="Run a Red Lantern BGP scenario with modular log adapters"
+        prog="simulator.cli",
+        description="Run a Red Lantern BGP scenario with modular log adapters",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "scenario",
