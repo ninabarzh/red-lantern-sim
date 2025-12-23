@@ -38,6 +38,8 @@ python -m simulator.cli \
   simulator/scenarios/easy/fat_finger_hijack/scenario.yaml
 ```
 
+See some [output examples](examples).
+
 If you want Wazuh integration, read [wazuh/README.md](wazuh/README.md) before doing anything clever.
 
 ## Usage
@@ -47,6 +49,8 @@ If you want Wazuh integration, read [wazuh/README.md](wazuh/README.md) before do
 ```bash
 python -m simulator.cli path/to/scenario.yaml
 ```
+
+### --help
 
 ```
 usage: simulator.cli [-h] [--mode {practice,training}] [--output {cli,json}]
@@ -106,8 +110,8 @@ The simulator is *agnostic* about attack meaning. Semantics live in telemetry ge
 
 ### Background traffic
 
-Background noise is enabled via CLI (`--background`), not via scenario YAML.
-This is intentional: scenarios remain deterministic and reusable.
+[Background noise](simulator/feeds) is enabled via CLI (`--background`), not via scenario YAML. This is intentional: 
+scenarios remain reusable.
 
 ## Extending the simulator
 
@@ -129,16 +133,10 @@ Each scenario folder contains its own README explaining:
 
 ### Add a new feed
 
-Feeds live under:
+Feeds live under: [simulator/feeds/](simulator/feeds):
 
-```
-simulator/feeds/
-```
-
-Examples:
-
-* `bgp/` — routing-level feeds
-* `change_mgmt/` — CMDB and config context
+* [bgp/](simulator/feeds/bgp) — routing-level feeds
+* [change_mgmt/](simulator/feeds/change_mgmt) — CMDB and config context
 
 Feeds may:
 
@@ -148,19 +146,13 @@ Feeds may:
 
 ### Add a new output adapter
 
-Adapters live under:
-
-```
-simulator/output/
-```
-
-Adapters translate internal events into:
+Adapters live under [simulator/output/](simulator/output/). Adapters translate internal events into more 
+realistic entries:
 
 * router syslog
 * RPKI logs
 * TACACS events
 * Wazuh-ready JSON
-
 
 ## Installation details
 
@@ -168,13 +160,13 @@ Adapters translate internal events into:
 
 * Python 3.12 or newer
 * Linux or macOS recommended
-* Windows works but is not the priority target
+* Windows might work but is not the priority target
 
 ### Common issues
 
 * **“Module not found”**: Ensure you are running from the repository root.
 * **Wazuh rules not firing**: Check decoder ordering and rule IDs. See `wazuh/README.md`.
-* **Background noise too loud**: This is intentional. 
+* **Background noise too loud**: This is intentional. Set it to less loud.
 
 ## Architecture (high-level)
 
@@ -190,28 +182,28 @@ ScenarioRunner ── SimulationClock
    Wazuh / logs / files
 ```
 
-Key design choices:
+Design choices:
 
 * Deterministic time, not wall-clock time
 * One event bus, many producers
 * Scenarios do not know about feeds
 * Feeds do not know about scenarios
 
-Yes, it is more complex than it looks. That is the point.
+It is more complex than it looks. That is the point.
 
 ## Roadmap
 
 Short-term:
 
-* Finish testing
+* Testing again
 * More realistic background BGP behaviour
-* Some more control-plane attack chains
-* Multi-scenario chained runs
-* Better tagging for analyst workflows
+* Documentation detection engineering and rule testing
+* Wazuh integration tested, active-response, decoders, lists, and rules 
 
 Mid-term:
 
 * Additional control-plane attack classes
+* Multi-scenario chained runs
 * Prebuilt Wazuh dashboards
 * Analyst exercises and workshops.
 
@@ -237,7 +229,7 @@ Because detection engineering needs repeatable, structured lies.
 
 ## License
 
-This project is released under **CC0 / public domain equivalent**.
+This project is released under [CC0 / public domain equivalent](https://creativecommons.org/publicdomain/zero/1.0/legalcode.en).
 
-Do what you want. Just do it well.
+Meaning: Do what you want. Just do it well. 
 
