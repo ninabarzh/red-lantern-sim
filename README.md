@@ -1,11 +1,5 @@
 # Red Lantern simulator
 
-![Version](https://img.shields.io/badge/status-active%20development-orange)
-![Python](https://img.shields.io/badge/python-3.12+-blue)
-![License](https://img.shields.io/badge/license-CC0-lightgrey)
-
-## What it is
-
 Red Lantern Simulator is a deterministic attack-telemetry generator for network and routing security scenarios.
 
 It simulates BGP and control-plane attack chains and emits structured JSON events designed to be ingested by Wazuh 
@@ -16,10 +10,17 @@ for detection engineering, rule testing, and analyst training.
 * Optional background “Internet noise” for analyst realism
 * Explicitly built for blue, purple, and red-team collaboration
 
-Related documentation:
+![Version](https://img.shields.io/badge/status-active%20development-orange)
+![Python](https://img.shields.io/badge/python-3.12+-blue)
+![License](https://img.shields.io/badge/license-CC0-lightgrey)
 
-* Attack models and scenarios: [https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/](https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/)
-* Defensive use and Wazuh integration: [https://blue.tymyrddin.dev/docs/shadows/red-lantern/](https://blue.tymyrddin.dev/docs/shadows/red-lantern/)
+The simulator functions within a classic cycle of attack and defense under the Patrician's shrewd management:
+
+- The Spark (foreign element): The Scarlet Semaphore begins its "experimentation," visible only by [a fleeting internal notice](https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/wall/internal-notice-tss).
+- The Reaction: The Department of Silent Stability detects the anomalies and [issues a cautious briefing](https://blue.tymyrddin.dev/docs/shadows/red-lantern/kickoff/internal-briefing-doss), which is promptly [intercepted by the attackers](https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/wall/internal-briefing-doss).
+- The Escalation: The red team uses this intelligence to [refine its "control-plane attack" theories](https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/wall/control-plane), creating a formal catalog.
+- The Patrician's Move: Seeing the activity as a useful but disruptive threat, the Patrician intervenes. He forcibly [recruits the talent](https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/wall/ponders-visit), converting the threat into a strategic asset.
+- The New Equilibrium: [The project is rebranded under "Purple Lantern Practice Ltd.]((https://purple.tymyrddin.dev/docs/lantern/red-lanterns/spark/patrician-engagement))," with the goal of "controlled burns" to strengthen the city's overall defenses, as the blue team continues its intelligence gathering.
 
 ## Getting started (quick start)
 
@@ -191,45 +192,8 @@ Design choices:
 
 It is more complex than it looks. That is the point.
 
-## Roadmap
-
-Short-term:
-
-* Testing again
-* More realistic background BGP behaviour
-* Documentation detection engineering and rule testing
-* Wazuh integration tested, active-response, decoders, lists, and rules 
-
-Mid-term:
-
-* Additional control-plane attack classes
-* Multi-scenario chained runs
-* Prebuilt Wazuh dashboards
-* Analyst exercises and workshops.
-
-No promises. Only intent.
-
-## FAQ
-
-**Is this a packet-level simulator?**
-
-No. It simulates *telemetry*, not packets.
-
-**Is this for red teams?**
-
-Primarily for blue and purple teams. Red teams will still find it useful.
-
-**Can I replay scenarios?**
-
-Yes. Is a core feature.
-
-**Why Wazuh?**
-
-Because detection engineering needs repeatable, structured lies.
-
 ## License
 
 This project is released under [CC0 / public domain equivalent](https://creativecommons.org/publicdomain/zero/1.0/legalcode.en).
 
 Meaning: Do what you want. Just do it well. 
-
