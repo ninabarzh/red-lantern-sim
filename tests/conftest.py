@@ -13,6 +13,32 @@ sys.path.insert(0, str(project_root))
 
 
 @pytest.fixture
+def mock_event_bus(monkeypatch):
+    """Mock EventBus for CLI tests."""
+    mock_bus = Mock()
+    monkeypatch.setattr("simulator.cli.EventBus", lambda: mock_bus)
+    return mock_bus
+
+
+@pytest.fixture
+def mock_scenario_runner(monkeypatch):
+    """Mock ScenarioRunner with default configuration."""
+    mock_runner = Mock()
+    mock_runner.scenario = {"id": "test_scenario"}
+    mock_runner.clock = Mock()
+    monkeypatch.setattr("simulator.cli.ScenarioRunner", lambda scenario_path, event_bus: mock_runner)
+    return mock_runner
+
+
+@pytest.fixture
+def mock_adapter(monkeypatch):
+    """Mock ScenarioAdapter."""
+    mock_adapter = Mock()
+    monkeypatch.setattr("simulator.cli.ScenarioAdapter", lambda: mock_adapter)
+    return mock_adapter
+
+
+@pytest.fixture
 def mock_clock() -> Mock:
     """Mock simulation clock."""
     clock = Mock()

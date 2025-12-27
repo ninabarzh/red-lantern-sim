@@ -1,585 +1,435 @@
-"""
-Unit tests for simulator.cli module.
+"""Unit tests for simulator.cli module.
+
+These tests verify CLI orchestration behaviour, not engine internals.
 """
 
-import json
 import sys
-from pathlib import Path
+
 from unittest.mock import Mock, patch
 
 import pytest
 
-from simulator.cli import (
-    build_parser,
-    load_scenario_telemetry,
-    main,
-    print_event,
-)
+from simulator.cli import main
 
 
-class TestPrintEvent:
-    """Tests for print_event function."""
+# ---------------------------------------------------------------------
+# Argument and file handling
+# ---------------------------------------------------------------------
 
-    def test_print_event_outputs_to_stdout(self, capsys):
-        """Test that print_event outputs the event dict to stdout as JSON."""
-        event = {"type": "test", "data": "value"}
-        print_event(event)
-        captured = capsys.readouterr()
-        # Check for JSON format instead of Python dict repr
-        assert '"type"' in captured.out
-        assert '"test"' in captured.out
-        assert '"data"' in captured.out
-        assert '"value"' in captured.out
-
-    def test_print_event_handles_empty_dict(self, capsys):
-        """Test print_event with empty dictionary."""
-        event = {}
-        print_event(event)
-        captured = capsys.readouterr()
-        assert "{}" in captured.out
-
-    def test_print_event_handles_nested_structures(self, capsys):
-        """Test print_event with nested data structures."""
-        event = {
-            "event_type": "bgp.update",
-            "attributes": {
-                "prefix": "203.0.113.0/24",
-                "as_path": [65001, 65002]
-            }
-        }
-        print_event(event)
-        captured = capsys.readouterr()
-        assert "bgp.update" in captured.out
-        assert "prefix" in captured.out
+def test_main_returns_1_when_scenario_not_found(capsys):
+    result = main(["does_not_exist.yaml"])
+    assert result == 1
+    err = capsys.readouterr().err
+    assert "Scenario file not found" in err
 
 
-class TestBuildParser:
-    """Tests for build_parser function."""
-
-    def test_parser_has_scenario_argument(self):
-        """Test that parser includes required scenario argument."""
-        parser = build_parser()
-        # Check that 'scenario' is in the parser
-        actions = {action.dest for action in parser._actions}
-        assert "scenario" in actions
-
-    def test_parser_scenario_type_is_path(self):
-        """Test that scenario argument is typed as Path."""
-        parser = build_parser()
-        scenario_action = next(
-            action for action in parser._actions if action.dest == "scenario"
-        )
-        assert scenario_action.type == Path
-
-    def test_parser_parses_valid_scenario_path(self):
-        """Test parsing with valid scenario path."""
-        parser = build_parser()
-        args = parser.parse_args(["scenario.yaml"])
-        assert isinstance(args.scenario, Path)
-        assert args.scenario == Path("scenario.yaml")
-
-    def test_parser_description_present(self):
-        """Test that parser has a description."""
-        parser = build_parser()
-        assert parser.description is not None
-        assert "scenario" in parser.description.lower()
+def test_main_requires_scenario_argument():
+    with pytest.raises(SystemExit):
+        main([])
 
 
-class TestLoadScenarioTelemetry:
-    """Tests for load_scenario_telemetry function."""
+# ---------------------------------------------------------------------
+# Scenario loading
+# ---------------------------------------------------------------------
 
-    def test_no_telemetry_file_returns_silently(self, tmp_path):
-        """Test that missing telemetry.py file doesn't raise error."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.touch()
+def test_main_returns_2_when_scenario_load_fails(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
 
-        event_bus = Mock()
-        clock = Mock()
+    mock_scenario_runner.load.side_effect = Exception("Load failed")
 
-        # Should not raise
-        load_scenario_telemetry(scenario_path, event_bus, clock, "test_scenario")
+    result = main([str(scenario)])
+    assert result == 2
+    err = capsys.readouterr().err
+    assert "Failed to load scenario" in err
+    mock_event_bus.subscribe.assert_called()
 
-    def test_telemetry_file_without_register_raises_error(self, tmp_path):
-        """Test that telemetry.py without register() raises RuntimeError."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.touch()
 
-        telemetry_path = tmp_path / "telemetry.py"
-        telemetry_path.write_text("# Empty telemetry module\n")
+# ---------------------------------------------------------------------
+# Telemetry loading
+# ---------------------------------------------------------------------
 
-        event_bus = Mock()
-        clock = Mock()
+def test_main_loads_telemetry_if_present(mock_event_bus, mock_scenario_runner, tmp_path):
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
 
-        with pytest.raises(RuntimeError, match="does not define a register"):
-            load_scenario_telemetry(scenario_path, event_bus, clock, "test_scenario")
-
-    def test_telemetry_register_called_with_correct_args(self, tmp_path):
-        """Test that register() is called with correct arguments."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.touch()
-
-        telemetry_path = tmp_path / "telemetry.py"
-        telemetry_path.write_text("""
+    telemetry = tmp_path / "telemetry.py"
+    telemetry.write_text(
+        """
 def register(event_bus, clock, scenario_name):
-    event_bus.test_called = True
-    event_bus.test_scenario = scenario_name
-""")
+    event_bus.called = True
+    event_bus.scenario_name = scenario_name
+"""
+    )
 
-        event_bus = Mock()
-        clock = Mock()
-        scenario_id = "test_scenario"
-
-        load_scenario_telemetry(scenario_path, event_bus, clock, scenario_id)
-
-        assert event_bus.test_called is True
-        assert event_bus.test_scenario == scenario_id
-
-    def test_invalid_telemetry_module_raises_error(self, tmp_path):
-        """Test that invalid Python in telemetry.py raises appropriate error."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.touch()
-
-        telemetry_path = tmp_path / "telemetry.py"
-        telemetry_path.write_text("this is not valid python syntax !!!")
-
-        event_bus = Mock()
-        clock = Mock()
-
-        with pytest.raises(SyntaxError):
-            load_scenario_telemetry(scenario_path, event_bus, clock, "test_scenario")
-
-    def test_telemetry_with_spec_none_raises_error(self, tmp_path):
-        """Test that spec loading failures are handled."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.touch()
-
-        telemetry_path = tmp_path / "telemetry.py"
-        telemetry_path.write_text("def register(event_bus, clock, scenario_name): pass")
-
-        event_bus = Mock()
-        clock = Mock()
-
-        with patch("importlib.util.spec_from_file_location", return_value=None):
-            with pytest.raises(RuntimeError, match="Could not load telemetry module"):
-                load_scenario_telemetry(scenario_path, event_bus, clock, "test_scenario")
+    result = main([str(scenario)])
+    assert result == 0
+    assert mock_event_bus.called
+    assert mock_event_bus.scenario_name == "test_scenario"
 
 
-class TestMain:
-    """Tests for main function."""
+def test_main_fails_when_telemetry_has_no_register(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+    telemetry = tmp_path / "telemetry.py"
+    telemetry.write_text("# no register here")
 
-    def test_main_returns_1_when_scenario_not_found(self, capsys):
-        """Test main returns 1 when scenario file doesn't exist."""
-        result = main(["nonexistent_scenario.yaml"])
-        assert result == 1
+    result = main([str(scenario)])
+    assert result == 2
+    err = capsys.readouterr().err
+    assert "does not define register()" in err
 
-        captured = capsys.readouterr()
-        assert "not found" in captured.err
 
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_returns_2_when_scenario_load_fails(
-        self, mock_event_bus, mock_runner, tmp_path, capsys
-    ):
-        """Test main returns 2 when scenario loading fails."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("invalid: yaml: content:")
+# ---------------------------------------------------------------------
+# Event handling and adapter
+# ---------------------------------------------------------------------
 
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
+def test_handle_event_filters_scenario_lines_in_practice_mode(mock_event_bus, mock_scenario_runner, mock_adapter, tmp_path, capsys):
+    """Test that practice mode filters SCENARIO: lines."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
 
-        mock_runner_instance = Mock()
-        mock_runner_instance.load.side_effect = Exception("Load failed")
-        mock_runner.return_value = mock_runner_instance
+    # Setup adapter to return both SCENARIO and normal lines
+    def adapter_transform(event):
+        if event.get("type") == "scenario_debug":
+            return ["SCENARIO: Debug information", "Normal log line"]
+        return ["Normal log line"]
 
-        result = main([str(scenario_path)])
-        assert result == 2
+    mock_adapter.transform.side_effect = adapter_transform
 
-        captured = capsys.readouterr()
-        assert "Failed to load scenario" in captured.err
+    # Store callback in a mutable container
+    callback_store = []
 
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_returns_2_when_scenario_has_no_id(
-        self, mock_event_bus, mock_runner, tmp_path, capsys
-    ):
-        """Test main returns 2 when scenario has no id field."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("name: test")
+    def mock_subscribe(callback):
+        callback_store.append(callback)
 
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
+    def mock_run():
+        if callback_store:
+            callback = callback_store[0]
+            callback({"type": "scenario_debug", "message": "test"})
+            callback({"type": "normal", "message": "test2"})
 
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {}  # No id field
-        mock_runner.return_value = mock_runner_instance
+    mock_event_bus.subscribe.side_effect = mock_subscribe
+    mock_scenario_runner.run.side_effect = mock_run
 
-        result = main([str(scenario_path)])
-        assert result == 2
+    result = main([str(scenario), "--mode", "practice"])
+    assert result == 0
 
-        captured = capsys.readouterr()
-        assert "no id field" in captured.err
+    captured = capsys.readouterr()
+    # Should only have normal lines, not SCENARIO lines
+    assert "Normal log line" in captured.out
+    # Should appear twice (once from each event)
+    assert captured.out.count("Normal log line") == 2
+    # Should NOT have SCENARIO lines
+    assert "SCENARIO: Debug information" not in captured.out
 
-    @patch("simulator.cli.load_scenario_telemetry")
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_returns_2_when_telemetry_load_fails(
-        self, mock_event_bus, mock_runner, mock_load_telemetry, tmp_path, capsys
-    ):
-        """Test main returns 2 when telemetry loading fails."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
 
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
+def test_handle_event_includes_scenario_lines_in_training_mode(mock_event_bus, mock_scenario_runner, mock_adapter, tmp_path, capsys):
+    """Test that training mode includes SCENARIO: lines."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
 
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test_scenario"}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
+    mock_adapter.transform.return_value = ["SCENARIO: Training debug line"]
 
-        mock_load_telemetry.side_effect = Exception("Telemetry load failed")
+    callback_store = []
 
-        result = main([str(scenario_path)])
-        assert result == 2
+    def mock_subscribe(callback):
+        callback_store.append(callback)
 
-        captured = capsys.readouterr()
-        assert "Failed to load scenario telemetry" in captured.err
+    def mock_run():
+        if callback_store:
+            callback_store[0]({"type": "debug"})
 
-    @patch("simulator.cli.load_scenario_telemetry")
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_returns_3_when_simulation_fails(
-        self, mock_event_bus, mock_runner, _mock_load_telemetry, tmp_path, capsys
-    ):
-        """Test main returns 3 when simulation execution fails."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
+    mock_event_bus.subscribe.side_effect = mock_subscribe
+    mock_scenario_runner.run.side_effect = mock_run
 
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
+    result = main([str(scenario), "--mode", "training"])
+    assert result == 0
 
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test_scenario"}
-        mock_runner_instance.clock = Mock()
-        mock_runner_instance.run.side_effect = Exception("Simulation failed")
-        mock_runner.return_value = mock_runner_instance
+    captured = capsys.readouterr()
+    assert "SCENARIO: Training debug line" in captured.out
 
-        result = main([str(scenario_path)])
-        assert result == 3
 
-        captured = capsys.readouterr()
-        assert "Simulation failed" in captured.err
+# ---------------------------------------------------------------------
+# JSON output mode
+# ---------------------------------------------------------------------
 
-    @patch("simulator.cli.load_scenario_telemetry")
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_returns_0_on_success(
-        self, mock_event_bus, mock_runner, _mock_load_telemetry, tmp_path
-    ):
-        """Test main returns 0 on successful execution."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
+def test_json_output_writes_to_file(mock_event_bus, mock_scenario_runner, mock_adapter, tmp_path):
+    """Test JSON mode writes events to file."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+    json_file = tmp_path / "output.json"
 
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
+    mock_adapter.transform.return_value = ["Line 1", "Line 2"]
 
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test_scenario"}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
+    callback_store = []
 
-        result = main([str(scenario_path)])
+    def mock_subscribe(callback):
+        callback_store.append(callback)
+
+    def mock_run():
+        if callback_store:
+            callback = callback_store[0]
+            callback({"type": "event1"})
+            callback({"type": "event2"})
+
+    mock_event_bus.subscribe.side_effect = mock_subscribe
+    mock_scenario_runner.run.side_effect = mock_run
+
+    result = main([str(scenario), "--output", "json", "--json-file", str(json_file)])
+    assert result == 0
+    assert json_file.exists()
+
+
+# ---------------------------------------------------------------------
+# Simulation execution
+# ---------------------------------------------------------------------
+
+def test_main_returns_3_when_simulation_fails(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+
+    mock_scenario_runner.run.side_effect = Exception("Simulation boom")
+
+    result = main([str(scenario)])
+    assert result == 3
+    err = capsys.readouterr().err
+    assert "Simulation failed" in err
+    mock_event_bus.subscribe.assert_called()
+
+
+def test_main_runs_scenario_successfully(mock_event_bus, mock_scenario_runner, tmp_path):
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+
+    result = main([str(scenario)])
+    assert result == 0
+    mock_scenario_runner.load.assert_called_once()
+    mock_scenario_runner.run.assert_called_once()
+    mock_event_bus.subscribe.assert_called()
+
+
+# ---------------------------------------------------------------------
+# Background mode
+# ---------------------------------------------------------------------
+
+def test_main_runs_with_background_when_flag_set(mock_event_bus, mock_scenario_runner, tmp_path):
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+
+    # Create a simple mock for run_with_background
+    mock_background_runner = Mock()
+
+    with pytest.MonkeyPatch().context() as m:
+        m.setattr("simulator.cli.run_with_background", mock_background_runner)
+
+        result = main([str(scenario), "--background"])
         assert result == 0
-
-    @patch("simulator.cli.load_scenario_telemetry")
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_subscribes_print_event_to_event_bus(
-        self, mock_event_bus, mock_runner, _mock_load_telemetry, tmp_path
-    ):
-        """Test that main subscribes print_event to the event bus."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
-
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
-
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test_scenario"}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
-
-        main([str(scenario_path)])
-
-        # Check that subscribe was called with print_event
-        mock_bus_instance.subscribe.assert_called()
-        # Verify print_event was one of the subscribed handlers
-        calls = mock_bus_instance.subscribe.call_args_list
-        assert any(call[0][0].__name__ == "print_event" for call in calls)
-
-    @patch("simulator.cli.load_scenario_telemetry")
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_calls_runner_methods_in_order(
-        self, mock_event_bus, mock_runner, _mock_load_telemetry, tmp_path
-    ):
-        """Test that main calls runner.load() before runner.run()."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
-
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
-
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test_scenario"}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
-
-        main([str(scenario_path)])
-
-        # Verify load() was called before run()
-        mock_runner_instance.load.assert_called_once()
-        mock_runner_instance.run.assert_called_once()
-
-        # Check order: load should be called before run
-        call_order = [call[0] for call in mock_runner_instance.method_calls]
-        load_idx = call_order.index("load")
-        run_idx = call_order.index("run")
-        assert load_idx < run_idx
-
-    @patch("simulator.cli.load_scenario_telemetry")
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_passes_scenario_id_to_telemetry_loader(
-        self, mock_event_bus, mock_runner, mock_load_telemetry, tmp_path
-    ):
-        """Test that main passes correct scenario_id to load_scenario_telemetry."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
-
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
-
-        test_scenario_id = "my_test_scenario"
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": test_scenario_id}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
-
-        main([str(scenario_path)])
-
-        # Verify load_scenario_telemetry was called with correct scenario_id
-        mock_load_telemetry.assert_called_once()
-        call_kwargs = mock_load_telemetry.call_args[1]
-        assert call_kwargs["scenario_id"] == test_scenario_id
-
-    @patch("simulator.cli.load_scenario_telemetry")
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_with_none_argv_uses_sys_argv(
-        self, mock_event_bus, mock_runner, _mock_load_telemetry, tmp_path
-    ):
-        """Test that main() with no args uses sys.argv."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
-
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
-
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test_scenario"}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
-
-        # Temporarily modify sys.argv
-        original_argv = sys.argv
-        try:
-            sys.argv = ["cli.py", str(scenario_path)]
-            result = main()
-            # Should execute without crashing
-            assert result == 0
-        finally:
-            sys.argv = original_argv
-
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_creates_event_bus_instance(
-        self, mock_event_bus, mock_runner, tmp_path
-    ):
-        """Test that main creates an EventBus instance."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
-
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
-
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test_scenario"}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
-
-        with patch("simulator.cli.load_scenario_telemetry"):
-            main([str(scenario_path)])
-
-        mock_event_bus.assert_called_once()
-
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_passes_event_bus_to_runner(
-        self, mock_event_bus, mock_runner, tmp_path
-    ):
-        """Test that main passes EventBus to ScenarioRunner."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
-
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
-
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test_scenario"}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
-
-        with patch("simulator.cli.load_scenario_telemetry"):
-            main([str(scenario_path)])
-
-        # Verify ScenarioRunner was instantiated with event_bus
-        mock_runner.assert_called_once()
-        call_kwargs = mock_runner.call_args[1]
-        assert "event_bus" in call_kwargs
-        assert call_kwargs["event_bus"] == mock_bus_instance
+        mock_event_bus.subscribe.assert_called()
+        # Verify run_with_background was called
+        assert mock_background_runner.called
 
 
-class TestMainIntegration:
-    """Integration-style tests for main function with real file system."""
+def test_main_runs_scenario_directly_without_background_flag(mock_event_bus, mock_scenario_runner, tmp_path):
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
 
-    def test_main_with_complete_valid_scenario(self, tmp_path):
-        """Integration test with a complete valid scenario setup."""
-        # Create scenario file
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("""
-id: integration_test
-name: Integration Test Scenario
-timeline:
-  - timestamp: 0
-    event: start
-""")
-
-        # Create telemetry file
-        telemetry_path = tmp_path / "telemetry.py"
-        telemetry_path.write_text("""
-def register(event_bus, clock, scenario_name):
-    # Simple registration that doesn't break
-    pass
-""")
-
-        with patch("simulator.cli.ScenarioRunner") as mock_runner, \
-             patch("simulator.cli.EventBus") as mock_event_bus:
-
-            mock_bus_instance = Mock()
-            mock_event_bus.return_value = mock_bus_instance
-
-            mock_runner_instance = Mock()
-            mock_runner_instance.scenario = {"id": "integration_test"}
-            mock_runner_instance.clock = Mock()
-            mock_runner.return_value = mock_runner_instance
-
-            result = main([str(scenario_path)])
-
-            assert result == 0
-            mock_runner_instance.load.assert_called_once()
-            mock_runner_instance.run.assert_called_once()
-
-    def test_main_with_scenario_without_telemetry(self, tmp_path):
-        """Test main works when telemetry.py doesn't exist."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("""
-id: no_telemetry_test
-name: No Telemetry Test
-""")
-
-        with patch("simulator.cli.ScenarioRunner") as mock_runner, \
-             patch("simulator.cli.EventBus") as mock_event_bus:
-
-            mock_bus_instance = Mock()
-            mock_event_bus.return_value = mock_bus_instance
-
-            mock_runner_instance = Mock()
-            mock_runner_instance.scenario = {"id": "no_telemetry_test"}
-            mock_runner_instance.clock = Mock()
-            mock_runner.return_value = mock_runner_instance
-
-            result = main([str(scenario_path)])
-
-            assert result == 0
+    result = main([str(scenario)])
+    assert result == 0
+    mock_scenario_runner.run.assert_called_once()
 
 
-class TestEdgeCases:
-    """Edge case tests for CLI module."""
+# ---------------------------------------------------------------------
+# argv handling
+# ---------------------------------------------------------------------
 
-    def test_print_event_with_none_values(self, capsys):
-        """Test print_event handles None values in dict (outputs as JSON null)."""
-        event = {"key": None, "nested": {"value": None}}
-        print_event(event)
+def test_main_uses_sys_argv_when_argv_is_none(mock_event_bus, mock_scenario_runner, tmp_path):
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+
+    original_argv = sys.argv
+    try:
+        sys.argv = ["simulator.cli", str(scenario)]
+        result = main()
+        assert result == 0
+        mock_event_bus.subscribe.assert_called()
+    finally:
+        sys.argv = original_argv
+
+
+"""Additional tests for missing coverage in simulator.cli module."""
+
+# ---------------------------------------------------------------------
+# Telemetry loading edge cases (line 89)
+# ---------------------------------------------------------------------
+
+def test_main_fails_when_telemetry_spec_is_none(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+    """Test failure when importlib cannot create spec from telemetry file."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+
+    # Create subdirectory structure
+    subdir = tmp_path / "subdir"
+    subdir.mkdir()
+    telemetry = subdir / "telemetry.py"
+    telemetry.write_text("def register(event_bus, clock, scenario_name): pass")
+
+    # Create scenario in parent dir so telemetry path is subdir/telemetry.py
+    scenario = subdir / "scenario.yaml"
+    scenario.write_text("id: test")
+
+    # Patch to return None for this specific file
+    original_spec_from_file = __import__('importlib.util', fromlist=['spec_from_file_location']).spec_from_file_location
+
+    def mock_spec_from_file(name, location):
+        # Only return None for our specific telemetry file
+        if 'telemetry.py' in str(location):
+            return None
+        return original_spec_from_file(name, location)
+
+    with patch("importlib.util.spec_from_file_location", side_effect=mock_spec_from_file):
+        result = main([str(scenario)])
+        assert result == 2
         captured = capsys.readouterr()
-        # JSON represents None as null
-        assert "null" in captured.out
+        assert "Could not load telemetry module" in captured.err
 
-    def test_print_event_with_large_event(self, capsys):
-        """Test print_event handles large events."""
-        event = {f"key_{i}": f"value_{i}" for i in range(100)}
-        print_event(event)
+
+def test_main_fails_when_telemetry_spec_loader_is_none(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+    """Test failure when spec.loader is None."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+
+    telemetry = tmp_path / "telemetry.py"
+    telemetry.write_text("def register(event_bus, clock, scenario_name): pass")
+
+    # Create a real spec but with None loader
+    original_spec_from_file = __import__('importlib.util', fromlist=['spec_from_file_location']).spec_from_file_location
+
+    def mock_spec_from_file(name, location):
+        if 'telemetry.py' in str(location):
+            # Return a mock spec with None loader
+            mock_spec = Mock()
+            mock_spec.loader = None
+            return mock_spec
+        return original_spec_from_file(name, location)
+
+    with patch("importlib.util.spec_from_file_location", side_effect=mock_spec_from_file):
+        result = main([str(scenario)])
+        assert result == 2
         captured = capsys.readouterr()
-        assert "key_0" in captured.out
-        assert "key_99" in captured.out
+        assert "Could not load telemetry module" in captured.err
 
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_with_relative_path(
-        self, mock_event_bus, mock_runner, tmp_path
-    ):
-        """Test main handles relative paths correctly."""
-        scenario_path = tmp_path / "subdir" / "scenario.yaml"
-        scenario_path.parent.mkdir(parents=True)
-        scenario_path.write_text("id: test")
 
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
+# ---------------------------------------------------------------------
+# Background mode info message (line 127)
+# ---------------------------------------------------------------------
 
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": "test"}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
+def test_background_mode_prints_info_to_stderr(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+    """Test that background mode prints configuration info to stderr in CLI mode."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
 
-        with patch("simulator.cli.load_scenario_telemetry"):
-            main([str(scenario_path)])
+    with patch("simulator.cli.run_with_background"):
+        result = main([
+            str(scenario),
+            "--background",
+            "--bgp-noise-rate", "1.5",
+            "--cmdb-noise-rate", "0.3",
+            "--output", "cli"
+        ])
 
-        # Verify runner was called - we don't need the return value
-        mock_runner_instance.run.assert_called_once()
+        assert result == 0
+        err = capsys.readouterr().err
+        assert "[INFO] Background noise enabled" in err
+        assert "1.5 BGP updates/sec" in err
+        assert "0.3 CMDB changes/sec" in err
 
-    @patch("simulator.cli.ScenarioRunner")
-    @patch("simulator.cli.EventBus")
-    def test_main_with_scenario_id_containing_special_chars(
-        self, mock_event_bus, mock_runner, tmp_path
-    ):
-        """Test main handles scenario IDs with special characters."""
-        scenario_path = tmp_path / "scenario.yaml"
-        scenario_path.write_text("id: test")
 
-        mock_bus_instance = Mock()
-        mock_event_bus.return_value = mock_bus_instance
+def test_background_mode_no_info_in_json_output(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+    """Test that background mode doesn't print info in JSON output mode."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+    json_file = tmp_path / "output.json"
 
-        special_id = "test-scenario_v1.2.3"
-        mock_runner_instance = Mock()
-        mock_runner_instance.scenario = {"id": special_id}
-        mock_runner_instance.clock = Mock()
-        mock_runner.return_value = mock_runner_instance
+    with patch("simulator.cli.run_with_background"):
+        result = main([
+            str(scenario),
+            "--background",
+            "--output", "json",
+            "--json-file", str(json_file)
+        ])
 
-        with patch("simulator.cli.load_scenario_telemetry") as mock_load:
-            main([str(scenario_path)])
+        assert result == 0
+        err = capsys.readouterr().err
+        # Info message should not appear in JSON mode
+        assert "[INFO] Background noise enabled" not in err
 
-            # Verify the special ID was passed correctly
-            call_kwargs = mock_load.call_args[1]
-            assert call_kwargs["scenario_id"] == special_id
-            # Verify runner was called
-            mock_runner_instance.run.assert_called_once()
+
+# ---------------------------------------------------------------------
+# JSON file write failure (lines 169-171)
+# ---------------------------------------------------------------------
+
+def test_main_returns_4_when_json_write_fails(mock_event_bus, mock_scenario_runner, mock_adapter, tmp_path, capsys):
+    """Test that JSON write failures are handled properly."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+
+    json_file = tmp_path / "output.json"
+
+    mock_adapter.transform.return_value = ["Test line"]
+
+    callback_store = []
+
+    def mock_subscribe(callback):
+        callback_store.append(callback)
+
+    def mock_run():
+        if callback_store:
+            callback_store[0]({"type": "test"})
+
+    mock_event_bus.subscribe.side_effect = mock_subscribe
+    mock_scenario_runner.run.side_effect = mock_run
+
+    # Mock Path.open() to raise an exception only for the JSON file
+    original_open = tmp_path.__class__.open
+
+    def selective_open(self, *args, **kwargs):
+        if self == json_file:
+            raise PermissionError("Cannot write")
+        return original_open(self, *args, **kwargs)
+
+    with patch.object(tmp_path.__class__, "open", selective_open):
+        result = main([str(scenario), "--output", "json", "--json-file", str(json_file)])
+
+        assert result == 4
+        err = capsys.readouterr().err
+        assert "Failed to write JSON file" in err
+
+
+def test_main_handles_json_dump_failure(mock_event_bus, mock_scenario_runner, mock_adapter, tmp_path, capsys):
+    """Test handling of JSON serialization failures."""
+    scenario = tmp_path / "scenario.yaml"
+    scenario.write_text("id: test")
+    json_file = tmp_path / "output.json"
+
+    mock_adapter.transform.return_value = ["Test line"]
+
+    callback_store = []
+
+    def mock_subscribe(callback):
+        callback_store.append(callback)
+
+    def mock_run():
+        if callback_store:
+            callback_store[0]({"type": "test"})
+
+    mock_event_bus.subscribe.side_effect = mock_subscribe
+    mock_scenario_runner.run.side_effect = mock_run
+
+    # Mock json.dump to raise an exception
+    with patch("json.dump", side_effect=TypeError("Object not serializable")):
+        result = main([str(scenario), "--output", "json", "--json-file", str(json_file)])
+
+        assert result == 4
+        err = capsys.readouterr().err
+        assert "Failed to write JSON file" in err
