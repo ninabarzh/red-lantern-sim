@@ -170,6 +170,8 @@ def main(argv: list[str] | None = None) -> int | None:
             print(f"Failed to write JSON file: {exc}", file=sys.stderr)
             return 4
 
+    return 0  # success
+
 
 if __name__ == "__main__":
 
