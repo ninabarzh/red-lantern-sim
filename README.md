@@ -1,5 +1,9 @@
 # Red Lantern simulator
 
+![Version](https://img.shields.io/badge/status-active%20development-orange)
+![Python](https://img.shields.io/badge/python-3.12+-blue)
+![License](https://img.shields.io/badge/license-CC0-lightgrey)
+
 Red Lantern Simulator is a deterministic attack-telemetry generator for network and routing security scenarios.
 
 It simulates BGP and control-plane attack chains and emits structured JSON events designed to be ingested by Wazuh 
@@ -9,10 +13,6 @@ for detection engineering, rule testing, and analyst training.
 * Timelines you can replay
 * Optional background “Internet noise” for analyst realism
 * Explicitly built for blue, purple, and red-team collaboration
-
-![Version](https://img.shields.io/badge/status-active%20development-orange)
-![Python](https://img.shields.io/badge/python-3.12+-blue)
-![License](https://img.shields.io/badge/license-CC0-lightgrey)
 
 The simulator functions within a classic cycle of attack and defense under the Patrician's shrewd management:
 
