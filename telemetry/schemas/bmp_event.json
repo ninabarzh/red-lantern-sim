@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BMP Route Monitoring Event",
+  "description": "Schema for BMP (BGP Monitoring Protocol) RouteMonitoring messages used in red-lantern-sim",
+  "type": "object",
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "bmp_route_monitoring"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "bmp_version": {
+      "type": "integer",
+      "const": 3
+    },
+    "message_type": {
+      "type": "string",
+      "const": "route_monitoring"
+    },
+    "peer_header": {
+      "type": "object",
+      "properties": {
+        "peer_type": {
+          "type": "integer",
+          "enum": [0, 1, 2, 3]
+        },
+        "peer_address": {
+          "type": "string"
+        },
+        "peer_as": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peer_bgp_id": {
+          "type": "string"
+        },
+        "timestamp_seconds": {
+          "type": "integer"
+        },
+        "timestamp_microseconds": {
+          "type": "integer"
+        }
+      },
+      "required": ["peer_type", "peer_address", "peer_as", "peer_bgp_id", "timestamp_seconds"]
+    },
+    "bgp_update": {
+      "type": "object",
+      "properties": {
+        "prefix": {
+          "type": "string"
+        },
+        "prefix_length": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 128
+        },
+        "afi": {
+          "type": "integer",
+          "enum": [1, 2]
+        },
+        "safi": {
+          "type": "integer",
+          "enum": [1]
+        },
+        "is_withdraw": {
+          "type": "boolean",
+          "default": false
+        },
+        "as_path": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "origin_as": {
+          "type": "integer"
+        },
+        "next_hop": {
+          "type": "string"
+        },
+        "origin": {
+          "type": "string",
+          "enum": ["IGP", "EGP", "INCOMPLETE"]
+        },
+        "local_pref": {
+          "type": "integer"
+        },
+        "med": {
+          "type": "integer"
+        },
+        "communities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["prefix", "afi", "safi"]
+    },
+    "scenario_metadata": {
+      "type": "object",
+      "properties": {
+        "scenario_id": {
+          "type": "string"
+        },
+        "scenario_name": {
+          "type": "string"
+        },
+        "attack_phase": {
+          "type": "string",
+          "enum": ["baseline", "attack", "detection", "mitigation", "post-incident"]
+        },
+        "is_malicious": {
+          "type": "boolean"
+        },
+        "attack_type": {
+          "type": "string"
+        },
+        "event_sequence_id": {
+          "type": "integer"
+        },
+        "correlation_id": {
+          "type": "string"
+        }
+      },
+      "required": ["scenario_id", "correlation_id"]
+    },
+    "rpki_validation": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["valid", "invalid", "not_found", "unknown"]
+        },
+        "validation_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "required": [
+    "event_type",
+    "timestamp",
+    "bmp_version",
+    "message_type",
+    "peer_header",
+    "bgp_update",
+    "scenario_metadata"
+  ]
+}

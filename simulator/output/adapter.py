@@ -4,6 +4,7 @@ from .tacacs_adapter import TACACSAdapter
 from .router_adapter import RouterAdapter
 from .rpki_adapter import RPKIAdapter
 from .cmdb_adapter import CMDBAdapter
+from .bmp_adapter import BMPAdapter
 
 class ScenarioAdapter:
     """Dispatch events to the proper feed adapter."""
@@ -16,6 +17,7 @@ class ScenarioAdapter:
             "bgp.update": RouterAdapter(),
             "rpki.validation": RPKIAdapter(),
             "cmdb.change": CMDBAdapter(),
+            "bmp_route_monitoring": BMPAdapter(),
         }
 
     def transform(self, event: dict) -> list[str]:
