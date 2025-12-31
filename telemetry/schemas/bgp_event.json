@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "BGP telemetry event",
-  "description": "Canonical telemetry event emitted by the Red Lantern BGP attack-chain simulator. This schema defines the contract between simulated attacks and detection tooling such as Wazuh.",
+  "description": "Canonical telemetry event emitted by the Red Lantern BGP attack-chain simulator.",
   "type": "object",
   "required": [
     "event_type",

@@ -89,9 +89,31 @@ def main(argv: list[str] | None = None) -> int | None:
                 continue
 
             # Skip SCENARIO debug lines in practice mode
-            if args.mode == "practice" and line.startswith("SCENARIO:"):
+            if args.mode == "practice" and isinstance(line, str) and line.startswith("SCENARIO:"):
                 continue
 
+            # Skip internal documentation lines in practice mode
+            if args.mode == "practice" and isinstance(line, str) and line.startswith("#"):
+                continue
+
+            # Strip scenario field from JSON lines in practice mode
+            if args.mode == "practice" and isinstance(line, str):
+                try:
+                    # Try to parse as JSON
+                    parsed = json.loads(line)
+                    if isinstance(parsed, dict) and "scenario" in parsed:
+                        # Remove scenario field and re-serialize
+                        parsed = {k: v for k, v in parsed.items() if k != "scenario"}
+                        line = json.dumps(parsed, separators=(',', ':'))
+                except (json.JSONDecodeError, ValueError):
+                    # Not JSON, leave as-is
+                    pass
+
+            # Strip scenario metadata in practice mode (for dict events)
+            if args.mode == "practice" and isinstance(line, dict):
+                line = {k: v for k, v in line.items() if k not in ("scenario_metadata", "scenario")}
+
+            # Construct event record
             event_record = {"line": line}
             if args.mode == "training":
                 event_record["original_event"] = event
@@ -152,7 +174,7 @@ def main(argv: list[str] | None = None) -> int | None:
             # Run with background noise
             run_with_background(runner, background_feeds, event_bus, clock)
         else:
-            # Run scenario only (original behavior)
+            # Run scenario only
             runner.run()
 
     except Exception as exc:
@@ -174,6 +196,5 @@ def main(argv: list[str] | None = None) -> int | None:
 
 
 if __name__ == "__main__":
-
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # Ignore broken pipe
     sys.exit(main())
