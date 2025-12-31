@@ -1,0 +1,26 @@
+id: playbook1
+name: Playbook 1
+description: BMP RouteMonitoring
+timeline:
+  - timestamp: 0
+    prefix: "192.0.2.0/24"
+    as_path: [65001, 65002]
+    origin_as: 65002
+    next_hop: "192.0.2.254"
+    peer_ip: "198.51.100.1"
+    peer_as: 65001
+    peer_bgp_id: "198.51.100.1"
+    is_malicious: false
+    attack_type: legitimate
+    correlation_id: "playbook1_0"
+  - timestamp: 10
+    prefix: "192.0.2.0/24"
+    as_path: [65001, 65003]
+    origin_as: 65003
+    next_hop: "192.0.2.253"
+    peer_ip: "198.51.100.2"
+    peer_as: 65001
+    peer_bgp_id: "198.51.100.2"
+    is_malicious: true
+    attack_type: hijack
+    correlation_id: "playbook1_1"

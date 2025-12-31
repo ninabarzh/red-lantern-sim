@@ -1,26 +1,168 @@
-id: playbook1
-name: Playbook 1 - BMP Demo
-description: Demonstrates BMP RouteMonitoring generation for simple scenario
+id: playbook1_rpki_recon
+name: "Playbook 1: RPKI Reconnaissance and ROA Creation"
+description: |
+  Control-plane attack preparation: Registry reconnaissance, legitimate ROA creation,
+  and baseline establishment before ROA poisoning. This is phase 1 of a 3-part chain
+  that poisons RPKI validation rather than bypassing it.
+  
+  Timeline simulates:
+  - Action 1.1: RPKI infrastructure reconnaissance for target prefix
+  - Action 1.2: Create legitimate ROA for our own prefix  
+  - Action 1.3: Baseline documentation and verification
+  
+  Key insight: This is preparation, not attack. No hijack occurs in phase 1.
+  The attack happens in playbook 3 after RPKI validation is compromised.
+
 timeline:
-  - timestamp: 0
-    prefix: "192.0.2.0/24"
-    as_path: [65001, 65002]
-    origin_as: 65002
-    next_hop: "192.0.2.254"
+  # === BASELINE: Target prefix operating normally ===
+  - t: 0
+    action: baseline_announcement
+    prefix: "203.0.113.0/24"
+    as_path: [65001, 65002, 65003]
+    origin_as: 65003
+    next_hop: "198.51.100.1"
     peer_ip: "198.51.100.1"
     peer_as: 65001
     peer_bgp_id: "198.51.100.1"
-    is_malicious: false
-    attack_type: legitimate
-    correlation_id: "playbook1_0"
-  - timestamp: 10
-    prefix: "192.0.2.0/24"
-    as_path: [65001, 65003]
+    communities: ["65003:100"]
+    attack_step: "baseline"
+    note: "Victim AS65003 legitimately announces their allocated prefix"
+
+  # === ACTION 1.1: RPKI Infrastructure Reconnaissance ===
+  - t: 60
+    action: rpki_query
+    prefix: "203.0.113.0/24"
     origin_as: 65003
-    next_hop: "192.0.2.253"
+    query_type: "ripe_stat_rpki_validation"
+    query_source: "https://stat.ripe.net/data/rpki-validation/data.json"
+    attack_step: "reconnaissance"
+    note: "Query RIPE Stat to check if victim has deployed RPKI ROAs"
+
+  - t: 65
+    action: rpki_validation_result
+    prefix: "203.0.113.0/24"
+    origin_as: 65003
+    rpki_state: "not_found"
+    roa_exists: false
+    attack_step: "reconnaissance"
+    note: "Discovery: No ROA exists for target prefix (victim hasn't deployed RPKI)"
+
+  - t: 70
+    action: whois_query
+    prefix: "203.0.113.0/24"
+    registry: "ARIN"
+    allocated_to: "AS65003"
+    attack_step: "reconnaissance"
+    note: "WHOIS query to identify RIR managing the allocation"
+
+  - t: 120
+    action: validator_query
+    prefix: "203.0.113.0/24"
+    validator: "routinator"
+    result: "no_roa_found"
+    attack_step: "reconnaissance"
+    note: "Cross-check with local Routinator validator"
+
+  # === ACTION 1.2: Create Legitimate ROA for Our Own Prefix ===
+  - t: 300
+    action: roa_creation_request
+    prefix: "198.51.100.0/24"
+    origin_as: 64513
+    max_length: 25
+    registry: "RIPE"
+    actor: "operator@attacker-as64513.net"
+    attack_step: "establish_presence"
+    note: "Submit ROA creation via RIPE hosted RPKI service for our legitimate allocation"
+
+  - t: 360
+    action: roa_accepted
+    prefix: "198.51.100.0/24"
+    origin_as: 64513
+    max_length: 25
+    registry: "RIPE"
+    attack_step: "establish_presence"
+    note: "RIPE accepts ROA creation request (typically instant)"
+
+  # === ROA Publication Lag (15-45 minutes typical) ===
+  - t: 1500
+    action: roa_published
+    prefix: "198.51.100.0/24"
+    origin_as: 64513
+    max_length: 25
+    trust_anchor: "ripe"
+    repository_url: "rsync://rpki.ripe.net/repository/"
+    attack_step: "establish_presence"
+    note: "ROA appears in RIPE's RPKI repository (20-minute publication cycle)"
+
+  - t: 1800
+    action: validator_sync
+    prefix: "198.51.100.0/24"
+    validator: "routinator"
+    rpki_state: "valid"
+    attack_step: "establish_presence"
+    note: "Routinator polls RIPE repository and sees our new ROA"
+
+  - t: 1850
+    action: validator_sync
+    prefix: "198.51.100.0/24"
+    validator: "fort"
+    rpki_state: "valid"
+    attack_step: "establish_presence"
+    note: "FORT validator also sees our ROA (different polling schedule)"
+
+  - t: 1900
+    action: validator_sync
+    prefix: "198.51.100.0/24"
+    validator: "cloudflare"
+    rpki_state: "valid"
+    attack_step: "establish_presence"
+    note: "Cloudflare's validator confirms ROA visibility"
+
+  # === Our legitimate BGP announcement (now with RPKI validation) ===
+  - t: 2000
+    action: baseline_announcement
+    prefix: "198.51.100.0/24"
+    as_path: [65001, 64513]
+    origin_as: 64513
+    next_hop: "198.51.100.254"
     peer_ip: "198.51.100.2"
     peer_as: 65001
     peer_bgp_id: "198.51.100.2"
-    is_malicious: true
-    attack_type: hijack
-    correlation_id: "playbook1_1"
+    rpki_state: "valid"
+    attack_step: "establish_presence"
+    note: "Our announcement now validates as VALID against our ROA"
+
+  # === ACTION 1.3: Baseline Documentation ===
+  - t: 2100
+    action: baseline_documented
+    target_prefix: "203.0.113.0/24"
+    target_as: 65003
+    target_roa_status: "not_found"
+    our_prefix: "198.51.100.0/24"
+    our_as: 64513
+    our_roa_status: "published_and_validated"
+    validators_checked: ["routinator", "fort", "cloudflare"]
+    publication_lag_observed: 1500
+    attack_step: "documentation"
+    note: "Baseline complete: Target has no RPKI, we have legitimate presence"
+
+  # === PHASE 1 COMPLETE - 7 DAY WAIT (compressed to 5 minutes for simulation) ===
+  - t: 2400
+    action: waiting_period_complete
+    days_elapsed: 7
+    attack_step: "operational_cover"
+    note: "7-day waiting period establishes us as normal long-term RPKI participant (compressed for simulation)"
+
+  # === Verification: Target status unchanged ===
+  - t: 2460
+    action: rpki_query
+    prefix: "203.0.113.0/24"
+    origin_as: 65003
+    rpki_state: "not_found"
+    attack_step: "verification"
+    note: "Re-verify target still has no ROA (unchanged baseline)"
+
+  - t: 2520
+    action: phase1_complete
+    attack_step: "completion"
+    note: "Phase 1 success criteria met. Ready for Phase 2 (ROA expansion)"

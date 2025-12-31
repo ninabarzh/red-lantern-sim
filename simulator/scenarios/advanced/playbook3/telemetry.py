@@ -1,15 +1,4 @@
 """
-Telemetry mapping for Playbook 1: RPKI Reconnaissance and ROA Creation.
-
-Control-plane attack preparation showing:
-- RPKI infrastructure reconnaissance (Action 1.1)
-- Legitimate ROA creation and publication (Action 1.2)
-- Baseline documentation (Action 1.3)
-
-This playbook generates realistic multi-source telemetry for each action,
-demonstrating what defenders would see during the reconnaissance phase.
-"""
-"""
 Telemetry mapping for Playbook 3: Prefix Hijacking with RPKI Validation Cover.
 
 Control-plane attack execution showing:

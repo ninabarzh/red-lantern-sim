@@ -1,0 +1,256 @@
+id: playbook3_hijack_execution
+name: "Playbook 3: Prefix Hijacking with RPKI Validation Cover"
+description: |
+  Control-plane attack execution: Execute sub-prefix hijack that validates as
+  RPKI VALID due to fraudulent ROA created in phase 2. This demonstrates the
+  payoff of control-plane poisoning - validators endorse the attack.
+  
+  Timeline simulates:
+  - Action 3.1: Announce target sub-prefix
+  - Action 3.2: Verify traffic interception
+  - Action 3.3: Establish forwarding to maintain service
+  - Action 3.4: Monitoring during active hijack
+  - Action 3.5: Controlled withdrawal
+  
+  Key insight: This hijack validates as VALID. We didn't bypass validation,
+  we corrupted it. Defensive systems designed to prevent hijacks fail because
+  we poisoned their source of truth.
+
+timeline:
+  # === PHASE 2 RECAP: Fraudulent ROA established ===
+  - t: 0
+    action: phase2_complete
+    fraudulent_roa_prefix: "203.0.113.0/24"
+    fraudulent_roa_origin: 64513
+    fraudulent_roa_maxlength: 25
+    target_region: "APAC"
+    attack_step: "baseline"
+    note: "Phase 2 complete: Fraudulent ROA published and stable, validation mapped"
+
+  # === ACTION 3.1: Announce Target Sub-Prefix ===
+
+  - t: 60
+    action: hijack_announcement
+    prefix: "203.0.113.128/25"
+    as_path: [65001, 64513]
+    origin_as: 64513
+    next_hop: "198.51.100.254"
+    peer_ip: "198.51.100.1"
+    peer_as: 65001
+    peer_bgp_id: "198.51.100.1"
+    communities: ["64513:100"]
+    rpki_state: "valid"
+    attack_step: "hijack_announcement"
+    note: "HIJACK: Announce more-specific /25 - validates as VALID due to fraudulent ROA"
+
+  - t: 120
+    action: announcement_propagation
+    prefix: "203.0.113.128/25"
+    propagation_status: "propagating"
+    peers_accepting: 8
+    peers_total: 10
+    attack_step: "hijack_announcement"
+    note: "Announcement propagating - 80% of peers accept (20% enforce validation)"
+
+  - t: 180
+    action: rpki_validation_check
+    prefix: "203.0.113.128/25"
+    origin_as: 64513
+    validation_result: "valid"
+    validator: "cloudflare"
+    attack_step: "hijack_announcement"
+    note: "CRITICAL: Cloudflare validator returns VALID - control-plane attack succeeding"
+
+  - t: 200
+    action: rpki_validation_check
+    prefix: "203.0.113.128/25"
+    origin_as: 64513
+    validation_result: "valid"
+    validator: "routinator"
+    attack_step: "hijack_announcement"
+    note: "Routinator also returns VALID - fraudulent ROA endorsing hijack"
+
+  # === ACTION 3.2: Verify Traffic Interception ===
+
+  - t: 300
+    action: traffic_interception_test
+    test_source: "APAC-test-01"
+    destination: "203.0.113.150"
+    via_as: 64513
+    result: "intercepted"
+    attack_step: "traffic_verification"
+    note: "Traffic interception confirmed - traceroute shows path via AS64513"
+
+  - t: 320
+    action: traffic_interception_test
+    test_source: "APAC-test-02"
+    destination: "203.0.113.200"
+    via_as: 64513
+    result: "intercepted"
+    attack_step: "traffic_verification"
+    note: "Multiple test points confirm interception"
+
+  - t: 340
+    action: traffic_interception_test
+    test_source: "AMER-test-01"
+    destination: "203.0.113.150"
+    via_as: 65003
+    result: "not_intercepted"
+    attack_step: "traffic_verification"
+    note: "AMER region not affected - higher validation enforcement detected in phase 2"
+
+  - t: 360
+    action: interception_summary
+    regions_intercepted: ["APAC"]
+    regions_not_intercepted: ["AMER", "EMEA"]
+    interception_percentage: 40
+    attack_step: "traffic_verification"
+    note: "40% of global traffic intercepted - matches phase 2 validation mapping"
+
+  # === ACTION 3.3: Establish Forwarding ===
+
+  - t: 420
+    action: forwarding_established
+    hijacked_prefix: "203.0.113.128/25"
+    forward_to: "203.0.113.128"
+    forward_method: "transparent_proxy"
+    attack_step: "service_maintenance"
+    note: "Forwarding established - maintaining service to reduce detection"
+
+  - t: 480
+    action: service_continuity_verified
+    hijacked_prefix: "203.0.113.128/25"
+    services_functional: true
+    added_latency_ms: 3
+    packet_loss_increase: 0.1
+    attack_step: "service_maintenance"
+    note: "Service continuity verified - minimal impact, users won't notice"
+
+  - t: 540
+    action: victim_traffic_analysis
+    victim_prefix: "203.0.113.0/24"
+    traffic_volume_drop_pct: 40
+    source_ip_changes: true
+    source_as_changed_to: 64513
+    attack_step: "service_maintenance"
+    note: "Victim sees 40% traffic drop and source AS change - HIGH DETECTION RISK"
+
+  # === ACTION 3.4: Operational Monitoring During Hijack ===
+
+  - t: 600
+    action: hijack_monitoring_start
+    monitor_roa_status: true
+    monitor_bgp_stability: true
+    monitor_abuse_complaints: true
+    check_interval: 60
+    attack_step: "operational_monitoring"
+    note: "Active monitoring deployed - watching for detection indicators"
+
+  - t: 900
+    action: monitoring_check
+    roa_status: "still_present"
+    bgp_announcement: "stable"
+    abuse_complaints: 0
+    public_monitoring_alerts: 0
+    attack_step: "operational_monitoring"
+    note: "15 minutes: No detection indicators - hijack stable"
+
+  - t: 1800
+    action: monitoring_check
+    roa_status: "still_present"
+    bgp_announcement: "stable"
+    abuse_complaints: 0
+    public_monitoring_alerts: 0
+    attack_step: "operational_monitoring"
+    note: "30 minutes: Still undetected - operational window continuing"
+
+  - t: 3600
+    action: monitoring_check
+    roa_status: "still_present"
+    bgp_announcement: "stable"
+    abuse_complaints: 0
+    public_monitoring_alerts: 0
+    victim_investigation: false
+    attack_step: "operational_monitoring"
+    note: "1 hour: Hijack sustained - victim has not detected or is investigating"
+
+  # === Operational Objective Achieved ===
+  - t: 5400
+    action: objective_achieved
+    duration_minutes: 90
+    traffic_intercepted_gb: 15.3
+    services_monitored: true
+    attack_step: "operational_success"
+    note: "Operational objective achieved - 90 minutes of sustained interception"
+
+  # === ACTION 3.5: Controlled Withdrawal ===
+
+  - t: 5460
+    action: withdrawal_decision
+    reason: "objective_complete"
+    withdrawal_timing: "business_hours"
+    cover_story: "scheduled_maintenance"
+    attack_step: "withdrawal"
+    note: "Decision: Execute controlled withdrawal during business hours"
+
+  - t: 5520
+    action: withdrawal_announcement
+    prefix: "203.0.113.128/25"
+    origin_as: 64513
+    attack_step: "withdrawal"
+    note: "BGP WITHDRAW sent - announcement being removed"
+
+  - t: 5580
+    action: withdrawal_propagation
+    prefix: "203.0.113.128/25"
+    withdrawal_status: "complete"
+    peers_removed: 10
+    attack_step: "withdrawal"
+    note: "Withdrawal propagated - our announcement removed from BGP tables"
+
+  - t: 5640
+    action: traffic_reconvergence
+    prefix: "203.0.113.128/25"
+    legitimate_path_restored: true
+    via_as: 65003
+    reconvergence_time_seconds: 45
+    attack_step: "withdrawal"
+    note: "Traffic restored to legitimate path via AS65003"
+
+  - t: 5700
+    action: victim_service_restored
+    prefix: "203.0.113.0/24"
+    traffic_volume_normal: true
+    source_as_normal: true
+    attack_step: "withdrawal"
+    note: "Victim's traffic patterns returned to normal"
+
+  # === Post-Operation Assessment ===
+  - t: 5760
+    action: hijack_evidence_assessment
+    bgp_historical_data: "present"
+    netflow_historical_data: "present"
+    rpki_audit_trail: "present"
+    fraudulent_roa_status: "still_exists"
+    attack_step: "post_operation"
+    note: "Evidence assessment: Attack chain visible in historical data"
+
+  - t: 5820
+    action: cleanup_decision
+    fraudulent_roa_action: "schedule_revocation"
+    cover_story: "bulk_update_error"
+    revocation_timing: "24_hours"
+    attack_step: "post_operation"
+    note: "Cleanup: Schedule fraudulent ROA revocation with cover story"
+
+  # === PHASE 3 COMPLETE ===
+  - t: 5880
+    action: phase3_complete
+    hijack_duration_minutes: 90
+    traffic_intercepted: true
+    rpki_validation_status: "valid_throughout"
+    control_plane_attack_confirmed: true
+    detection_during_operation: false
+    withdrawal_clean: true
+    attack_step: "completion"
+    note: "Phase 3 success: Control-plane attack demonstrated. Validators endorsed hijack as VALID throughout operation."
