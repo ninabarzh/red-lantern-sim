@@ -166,3 +166,6 @@ timeline:
     action: phase1_complete
     attack_step: "completion"
     note: "Phase 1 success criteria met. Ready for Phase 2 (ROA expansion)"
+
+  - t: 7200
+    type: end_marker

@@ -82,7 +82,6 @@ def main(argv: list[str] | None = None) -> int | None:
     transformed_events: List[dict[str, Any]] = []
 
     def handle_event(event: dict[str, Any]) -> None:
-        # Transform event via adapter
         lines = adapter.transform(event)
         for line in lines:
             if not line:
@@ -92,6 +91,10 @@ def main(argv: list[str] | None = None) -> int | None:
             if args.mode == "practice" and isinstance(line, str) and line.startswith("SCENARIO:"):
                 continue
 
+            # Skip internal documentation and metadata lines in practice mode
+            if args.mode == "practice" and isinstance(line, str) and line.startswith("[INTERNAL]"):
+                continue
+
             # Skip internal documentation lines in practice mode
             if args.mode == "practice" and isinstance(line, str) and line.startswith("#"):
                 continue
@@ -99,21 +102,16 @@ def main(argv: list[str] | None = None) -> int | None:
             # Strip scenario field from JSON lines in practice mode
             if args.mode == "practice" and isinstance(line, str):
                 try:
-                    # Try to parse as JSON
                     parsed = json.loads(line)
                     if isinstance(parsed, dict) and "scenario" in parsed:
-                        # Remove scenario field and re-serialize
                         parsed = {k: v for k, v in parsed.items() if k != "scenario"}
                         line = json.dumps(parsed, separators=(',', ':'))
                 except (json.JSONDecodeError, ValueError):
-                    # Not JSON, leave as-is
                     pass
 
-            # Strip scenario metadata in practice mode (for dict events)
             if args.mode == "practice" and isinstance(line, dict):
                 line = {k: v for k, v in line.items() if k not in ("scenario_metadata", "scenario")}
 
-            # Construct event record
             event_record = {"line": line}
             if args.mode == "training":
                 event_record["original_event"] = event

@@ -1,30 +1,38 @@
 from __future__ import annotations
 from typing import Any, Iterable
-import json
-
 from .base import Adapter
 
 
 class BMPAdapter(Adapter):
-    """Adapter for BMP telemetry events."""
+    """Adapter for BMP telemetry events, including withdrawals and reconvergence."""
 
     def transform(self, event: dict[str, Any]) -> Iterable[str]:
         lines: list[str] = []
 
+        event_type = event.get("event_type")
         bgp_update = event.get("bgp_update", {})
-        prefix = bgp_update.get("prefix", "unknown")
-        as_path = bgp_update.get("as_path", [])
-        next_hop = bgp_update.get("next_hop", "unknown")
-        origin_as = bgp_update.get("origin_as", 0)
 
-        # CLI-friendly line
-        line = (
-            f"BMP ROUTE: prefix {prefix} AS_PATH {as_path} "
-            f"NEXT_HOP {next_hop} ORIGIN_AS {origin_as}"
-        )
-        lines.append(line)
+        if event_type == "bmp_route_monitoring":
+            prefix = bgp_update.get("prefix", "unknown")
+            as_path = bgp_update.get("as_path", [])
+            next_hop = bgp_update.get("next_hop", "unknown")
+            origin_as = bgp_update.get("origin_as", 0)
+            is_withdraw = bgp_update.get("is_withdraw", False)
 
-        # JSON representation
-        lines.append(json.dumps(event))
+            if is_withdraw:
+                line = f"<13>Jan 01 01:32:00 edge-router-01 BGP withdrawal: {prefix} from AS{origin_as}"
+            else:
+                line = (
+                    f"BMP ROUTE: prefix {prefix} AS_PATH {as_path} "
+                    f"NEXT_HOP {next_hop} ORIGIN_AS {origin_as}"
+                )
+            lines.append(line)
+
+        elif event_type == "bgp.withdrawal_complete":
+            # Minimal placeholder for demonstration
+            lines.append(f"<13>Jan 01 01:32:10 edge-router-01 BGP withdrawal complete")
+
+        elif event_type == "bgp.reconvergence":
+            lines.append(f"<14>Jan 01 01:35:00 edge-router-01 BGP reconvergence completed")
 
         return lines

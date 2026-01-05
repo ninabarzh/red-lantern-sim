@@ -215,3 +215,6 @@ timeline:
     target_region: "EMEA"
     attack_step: "completion"
     note: "Phase 2 success: Fraudulent ROA stable, validation mapped, monitoring active. Ready for Phase 3 (hijack execution)"
+
+  - t: 7200
+    type: end_marker

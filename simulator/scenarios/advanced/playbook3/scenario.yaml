@@ -254,3 +254,6 @@ timeline:
     withdrawal_clean: true
     attack_step: "completion"
     note: "Phase 3 success: Control-plane attack demonstrated. Validators endorsed hijack as VALID throughout operation."
+
+  - t: 7200
+    type: end_marker

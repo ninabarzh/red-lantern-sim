@@ -5,6 +5,7 @@ from .router_adapter import RouterAdapter
 from .rpki_adapter import RPKIAdapter
 from .cmdb_adapter import CMDBAdapter
 from .bmp_adapter import BMPAdapter
+from .internal_adapter import InternalAdapter
 
 
 class ScenarioAdapter:
@@ -37,9 +38,10 @@ class ScenarioAdapter:
             "bmp_route_monitoring": BMPAdapter(),
 
             # Internal/documentation events
-            "internal.documentation": RPKIAdapter(),  # Use RPKI adapter for comment-style output
-            "internal.phase_transition": RPKIAdapter(),
-            "internal.phase_complete": RPKIAdapter(),
+            "internal.documentation": InternalAdapter(),  # Use RPKI adapter for comment-style output
+            "internal.phase_complete": InternalAdapter(),
+            "internal.monitoring_status": InternalAdapter(),
+            "internal.phase_transition": InternalAdapter(),
         }
 
     def transform(self, event: dict) -> list[str]:
