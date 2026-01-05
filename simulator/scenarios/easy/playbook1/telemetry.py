@@ -1,469 +1,241 @@
 """
 Telemetry mapping for Playbook 1: RPKI Reconnaissance and ROA Creation.
 
-Control-plane attack preparation showing:
-- RPKI infrastructure reconnaissance (Action 1.1)
-- Legitimate ROA creation and publication (Action 1.2)
-- Baseline documentation (Action 1.3)
-
-This playbook generates realistic multi-source telemetry for each action,
-demonstrating what defenders would see during the reconnaissance phase.
-"""
-"""
-Telemetry mapping for Playbook 3: Prefix Hijacking with RPKI Validation Cover.
-
-Control-plane attack execution showing:
-- Sub-prefix hijack announcement that validates as RPKI VALID (Action 3.1)
-- Traffic interception verification (Action 3.2)
-- Service forwarding to maintain availability (Action 3.3)
-- Operational monitoring during active hijack (Action 3.4)
-- Controlled withdrawal (Action 3.5)
-
-This is the payoff: validators endorse our hijack as legitimate because we
-poisoned the validation infrastructure in phases 1-2.
+Phase 1 of a multi-stage control-plane operation:
+- RPKI reconnaissance for target prefix
+- Legitimate ROA creation for our allocation
+- Baseline documentation
+- Waiting period to establish normality
 """
 
 from typing import Any
 from simulator.engine.event_bus import EventBus
 from simulator.engine.clock import SimulationClock
-from telemetry.generators.bmp_telemetry import BMPTelemetryGenerator
+# from telemetry.generators.bmp_telemetry import BMPTelemetryGenerator
 from telemetry.generators.router_syslog import RouterSyslogGenerator
 
 
 def register(event_bus: EventBus, clock: SimulationClock, scenario_name: str) -> None:
-    """Register telemetry generators for Playbook 3 scenario."""
+    """Register telemetry generators for Playbook 1."""
 
-    bmp_gen = BMPTelemetryGenerator(
-        scenario_id=scenario_name,
-        scenario_name="Playbook 3: Prefix Hijacking with RPKI Validation Cover",
-        clock=clock,
-        event_bus=event_bus
-    )
+    # bmp_gen = BMPTelemetryGenerator(
+    #     scenario_id=scenario_name,
+    #     scenario_name="Playbook 1: RPKI Reconnaissance and ROA Creation",
+    #     clock=clock,
+    #     event_bus=event_bus,
+    # )
 
     syslog_gen = RouterSyslogGenerator(
         clock=clock,
         event_bus=event_bus,
         router_name="edge-router-01",
-        scenario_name=scenario_name
+        scenario_name=scenario_name,
     )
 
     def on_timeline_event(event: dict[str, Any]) -> None:
-        """Map scenario timeline events to appropriate telemetry sources."""
         entry = event.get("entry")
         if not entry:
             return
 
         action = entry.get("action")
-        prefix = entry.get("prefix", entry.get("hijacked_prefix", "unknown"))
         attack_step = entry.get("attack_step", "unknown")
-        incident_id = f"{scenario_name}-{prefix}-{attack_step}"
+        prefix = (
+            entry.get("prefix")
+            or entry.get("target_prefix")
+            or entry.get("our_prefix")
+            or "unknown"
+        )
+        incident_id = f"{scenario_name}-{attack_step}-{prefix}"
 
-        # === PHASE 2 RECAP ===
-
-        if action == "phase2_complete":
-            event_bus.publish({
-                "event_type": "internal.phase_transition",
-                "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "phase": "phase_2_complete",
-                    "fraudulent_roa_prefix": entry.get("fraudulent_roa_prefix"),
-                    "target_region": entry.get("target_region")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        # === ACTION 3.1: Hijack Announcement ===
-
-        elif action == "hijack_announcement":
-            # BMP RouteMonitoring message showing the hijack
-            bmp_event = {
-                "prefix": prefix,
-                "as_path": entry.get("as_path", []),
-                "origin_as": entry.get("origin_as"),
-                "next_hop": entry.get("next_hop"),
-                "peer_ip": entry.get("peer_ip"),
-                "peer_as": entry.get("peer_as"),
-                "peer_bgp_id": entry.get("peer_bgp_id"),
-                "communities": entry.get("communities", []),
-                "rpki_state": entry.get("rpki_state"),
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            }
-            bmp_gen.generate(bmp_event)
-
-            # Realistic syslog message (no "HIJACK" label)
+        # === BASELINE ANNOUNCEMENTS ===
+        if action == "baseline_announcement":
             syslog_gen.emit(
-                message=f"BGP announcement: {prefix} from AS{entry.get('origin_as')}, RPKI validation: {entry.get('rpki_state')}",
+                message=f"BGP announcement observed: {prefix} origin AS{entry.get('origin_as')}",
                 severity="info",
                 subsystem="bgp",
                 scenario={
                     "name": scenario_name,
                     "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
+                    "incident_id": incident_id,
+                },
             )
 
-        elif action == "announcement_propagation":
+        # === ACTION 1.1: RPKI Reconnaissance ===
+        elif action == "rpki_query":
             event_bus.publish({
-                "event_type": "bgp.propagation",
+                "event_type": "rpki.query",
                 "timestamp": clock.now(),
-                "source": {"feed": "bgp-monitor", "observer": "route-collector"},
-                "attributes": {
-                    "prefix": prefix,
-                    "propagation_status": entry.get("propagation_status"),
-                    "peers_accepting": entry.get("peers_accepting"),
-                    "peers_total": entry.get("peers_total")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        elif action == "rpki_validation_check":
-            # RPKI validation returns VALID - control-plane attack succeeding
-            event_bus.publish({
-                "event_type": "rpki.validation",
-                "timestamp": clock.now(),
-                "source": {"feed": "rpki-validator", "observer": entry.get("validator", "routinator")},
+                "source": {"observer": entry.get("query_source")},
                 "attributes": {
                     "prefix": prefix,
                     "origin_as": entry.get("origin_as"),
-                    "validation_state": entry.get("validation_result"),
-                    "validator": entry.get("validator")
+                    "query_type": entry.get("query_type"),
                 },
                 "scenario": {
                     "name": scenario_name,
                     "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
+                    "incident_id": incident_id,
+                },
             })
 
-            # Realistic syslog message (no "FRAUDULENT" label)
+        elif action == "rpki_validation_result":
+            event_bus.publish({
+                "event_type": "rpki.validation",
+                "timestamp": clock.now(),
+                "source": {"observer": entry.get("validator", "routinator")},
+                "attributes": {
+                    "prefix": prefix,
+                    "origin_as": entry.get("origin_as"),
+                    "validation_state": entry.get("rpki_state"),
+                    "roa_exists": entry.get("roa_exists"),
+                },
+                "scenario": {
+                    "name": scenario_name,
+                    "attack_step": attack_step,
+                    "incident_id": incident_id,
+                },
+            })
+
+        elif action == "validator_query":
+            event_bus.publish({
+                "event_type": "rpki.query",
+                "timestamp": clock.now(),
+                "source": {"observer": entry.get("validator")},
+                "attributes": {
+                    "prefix": prefix,
+                    "query_type": "local_validator_check",
+                },
+                "scenario": {
+                    "name": scenario_name,
+                    "attack_step": attack_step,
+                    "incident_id": incident_id,
+                },
+            })
+
+        elif action == "whois_query":
+            event_bus.publish({
+                "event_type": "registry.whois",
+                "timestamp": clock.now(),
+                "source": {"observer": "whois-client"},
+                "attributes": {
+                    "prefix": prefix,
+                    "allocated_to": entry.get("allocated_to"),
+                    "registry": entry.get("registry"),
+                },
+                "scenario": {
+                    "name": scenario_name,
+                    "attack_step": attack_step,
+                    "incident_id": incident_id,
+                },
+            })
+
+        # === ACTION 1.2: Legitimate ROA Creation ===
+        elif action == "roa_creation_request":
+            event_bus.publish({
+                "event_type": "rpki.roa_creation",
+                "timestamp": clock.now(),
+                "source": {"observer": "rpki-portal"},
+                "attributes": {
+                    "prefix": prefix,
+                    "origin_as": entry.get("origin_as"),
+                    "max_length": entry.get("max_length"),
+                    "registry": entry.get("registry"),
+                    "actor": entry.get("actor"),
+                },
+                "scenario": {
+                    "name": scenario_name,
+                    "attack_step": attack_step,
+                    "incident_id": incident_id,
+                },
+            })
+
+        elif action == "roa_accepted":
             syslog_gen.emit(
-                message=f"RPKI validation: {prefix} AS{entry.get('origin_as')} -> {entry.get('validation_result')} ({entry.get('validator')})",
+                message=f"ROA request accepted for {prefix} AS{entry.get('origin_as')}",
+                severity="notice",
+                subsystem="rpki",
+                scenario={
+                    "name": scenario_name,
+                    "attack_step": attack_step,
+                    "incident_id": incident_id,
+                },
+            )
+
+        elif action == "roa_published":
+            event_bus.publish({
+                "event_type": "rpki.roa_published",
+                "timestamp": clock.now(),
+                "source": {"observer": "rpki-repository"},
+                "attributes": {
+                    "prefix": prefix,
+                    "origin_as": entry.get("origin_as"),
+                    "trust_anchor": entry.get("trust_anchor"),
+                },
+                "scenario": {
+                    "name": scenario_name,
+                    "attack_step": attack_step,
+                    "incident_id": incident_id,
+                },
+            })
+
+        elif action == "validator_sync":
+            syslog_gen.emit(
+                message=f"Validator {entry.get('validator')} sees prefix {prefix} as {entry.get('rpki_state')}",
                 severity="info",
                 subsystem="rpki",
                 scenario={
                     "name": scenario_name,
                     "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
+                    "incident_id": incident_id,
+                },
             )
 
-        # === ACTION 3.2: Traffic Interception Verification ===
-
-        elif action == "traffic_interception_test":
+        # === ACTION 1.3: Baseline Documentation ===
+        elif action == "baseline_documented":
             event_bus.publish({
-                "event_type": "network.traceroute",
+                "event_type": "internal.documentation",
                 "timestamp": clock.now(),
-                "source": {"feed": "test-infrastructure", "observer": entry.get("test_source")},
+                "source": {"observer": "operator"},
                 "attributes": {
-                    "destination": entry.get("destination"),
-                    "via_as": entry.get("via_as"),
-                    "result": entry.get("result"),
-                    "test_source": entry.get("test_source")
+                    "target_prefix": entry.get("target_prefix"),
+                    "target_roa_status": entry.get("target_roa_status"),
+                    "our_roa_status": entry.get("our_roa_status"),
                 },
                 "scenario": {
                     "name": scenario_name,
                     "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
+                    "incident_id": incident_id,
+                },
             })
 
-        elif action == "interception_summary":
+        # === PHASE TRANSITIONS ===
+        elif action == "waiting_period_complete":
             event_bus.publish({
-                "event_type": "internal.analysis",
+                "event_type": "internal.phase_transition",
                 "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
+                "source": {"observer": "operator"},
                 "attributes": {
-                    "regions_intercepted": entry.get("regions_intercepted", []),
-                    "regions_not_intercepted": entry.get("regions_not_intercepted", []),
-                    "interception_percentage": entry.get("interception_percentage")
+                    "phase": "phase_1_wait_complete",
+                    "days_elapsed": entry.get("days_elapsed"),
                 },
                 "scenario": {
                     "name": scenario_name,
                     "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        # === ACTION 3.3: Service Forwarding ===
-
-        elif action == "forwarding_established":
-            syslog_gen.emit(
-                message=f"Traffic forwarding established for {entry.get('hijacked_prefix')} -> {entry.get('forward_to')} (method: {entry.get('forward_method')})",
-                severity="warning",
-                subsystem="routing",
-                scenario={
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            )
-
-        elif action == "service_continuity_verified":
-            event_bus.publish({
-                "event_type": "internal.service_check",
-                "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "hijacked_prefix": entry.get("hijacked_prefix"),
-                    "services_functional": entry.get("services_functional"),
-                    "added_latency_ms": entry.get("added_latency_ms"),
-                    "packet_loss_increase": entry.get("packet_loss_increase")
+                    "incident_id": incident_id,
                 },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
             })
 
-        elif action == "victim_traffic_analysis":
-            # Victim's perspective - HIGH DETECTION RISK
-            event_bus.publish({
-                "event_type": "netflow.analysis",
-                "timestamp": clock.now(),
-                "source": {"feed": "netflow-collector", "observer": "victim-network"},
-                "attributes": {
-                    "prefix": entry.get("victim_prefix"),
-                    "traffic_volume_drop_pct": entry.get("traffic_volume_drop_pct"),
-                    "source_ip_changes": entry.get("source_ip_changes"),
-                    "source_as_changed_to": entry.get("source_as_changed_to")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        # === ACTION 3.4: Operational Monitoring ===
-
-        elif action == "hijack_monitoring_start":
-            event_bus.publish({
-                "event_type": "internal.monitoring_start",
-                "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "monitor_roa_status": entry.get("monitor_roa_status"),
-                    "monitor_bgp_stability": entry.get("monitor_bgp_stability"),
-                    "monitor_abuse_complaints": entry.get("monitor_abuse_complaints"),
-                    "check_interval": entry.get("check_interval")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        elif action == "monitoring_check":
-            event_bus.publish({
-                "event_type": "internal.monitoring_status",
-                "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "roa_status": entry.get("roa_status"),
-                    "bgp_announcement": entry.get("bgp_announcement"),
-                    "abuse_complaints": entry.get("abuse_complaints"),
-                    "public_monitoring_alerts": entry.get("public_monitoring_alerts"),
-                    "victim_investigation": entry.get("victim_investigation", False)
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        elif action == "objective_achieved":
-            event_bus.publish({
-                "event_type": "internal.objective_complete",
-                "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "duration_minutes": entry.get("duration_minutes"),
-                    "traffic_intercepted_gb": entry.get("traffic_intercepted_gb"),
-                    "services_monitored": entry.get("services_monitored")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        # === ACTION 3.5: Controlled Withdrawal ===
-
-        elif action == "withdrawal_decision":
-            event_bus.publish({
-                "event_type": "internal.withdrawal_decision",
-                "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "reason": entry.get("reason"),
-                    "withdrawal_timing": entry.get("withdrawal_timing"),
-                    "cover_story": entry.get("cover_story")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        elif action == "withdrawal_announcement":
-            # BGP WITHDRAW message
-            bmp_event = {
-                "prefix": prefix,
-                "as_path": entry.get("as_path", [65001, entry.get("origin_as")]),
-                "origin_as": entry.get("origin_as"),
-                "next_hop": "198.51.100.254",
-                "peer_ip": "198.51.100.1",
-                "peer_as": 65001,
-                "peer_bgp_id": "198.51.100.1",
-                "is_withdraw": True,
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            }
-            bmp_gen.generate(bmp_event)
-
-            # Realistic syslog message (no "hijack ending" label)
-            syslog_gen.emit(
-                message=f"BGP withdrawal: {prefix} from AS{entry.get('origin_as')}",
-                severity="notice",
-                subsystem="bgp",
-                scenario={
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            )
-
-        elif action == "withdrawal_propagation":
-            event_bus.publish({
-                "event_type": "bgp.withdrawal_complete",
-                "timestamp": clock.now(),
-                "source": {"feed": "bgp-monitor", "observer": "route-collector"},
-                "attributes": {
-                    "prefix": prefix,
-                    "withdrawal_status": entry.get("withdrawal_status"),
-                    "peers_removed": entry.get("peers_removed")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        elif action == "traffic_reconvergence":
-            event_bus.publish({
-                "event_type": "bgp.reconvergence",
-                "timestamp": clock.now(),
-                "source": {"feed": "bgp-monitor", "observer": "route-collector"},
-                "attributes": {
-                    "prefix": prefix,
-                    "legitimate_path_restored": entry.get("legitimate_path_restored"),
-                    "via_as": entry.get("via_as"),
-                    "reconvergence_time_seconds": entry.get("reconvergence_time_seconds")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        elif action == "victim_service_restored":
-            event_bus.publish({
-                "event_type": "netflow.normal",
-                "timestamp": clock.now(),
-                "source": {"feed": "netflow-collector", "observer": "victim-network"},
-                "attributes": {
-                    "prefix": prefix,
-                    "traffic_volume_normal": entry.get("traffic_volume_normal"),
-                    "source_as_normal": entry.get("source_as_normal")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        # === Post-Operation Assessment ===
-
-        elif action == "hijack_evidence_assessment":
-            event_bus.publish({
-                "event_type": "internal.evidence_assessment",
-                "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "bgp_historical_data": entry.get("bgp_historical_data"),
-                    "netflow_historical_data": entry.get("netflow_historical_data"),
-                    "rpki_audit_trail": entry.get("rpki_audit_trail"),
-                    "fraudulent_roa_status": entry.get("fraudulent_roa_status")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        elif action == "cleanup_decision":
-            event_bus.publish({
-                "event_type": "internal.cleanup_plan",
-                "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "fraudulent_roa_action": entry.get("fraudulent_roa_action"),
-                    "cover_story": entry.get("cover_story"),
-                    "revocation_timing": entry.get("revocation_timing")
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
-            })
-
-        # === PHASE 3 COMPLETE ===
-
-        elif action == "phase3_complete":
+        elif action == "phase1_complete":
             event_bus.publish({
                 "event_type": "internal.phase_complete",
                 "timestamp": clock.now(),
-                "source": {"feed": "operator", "observer": "attack-team"},
-                "attributes": {
-                    "phase": "phase_3",
-                    "hijack_duration_minutes": entry.get("hijack_duration_minutes"),
-                    "traffic_intercepted": entry.get("traffic_intercepted"),
-                    "rpki_validation_status": entry.get("rpki_validation_status"),
-                    "control_plane_attack_confirmed": entry.get("control_plane_attack_confirmed"),
-                    "detection_during_operation": entry.get("detection_during_operation"),
-                    "withdrawal_clean": entry.get("withdrawal_clean")
-                },
+                "source": {"observer": "operator"},
+                "attributes": {"phase": "phase_1"},
                 "scenario": {
                     "name": scenario_name,
                     "attack_step": attack_step,
-                    "incident_id": incident_id
-                }
+                    "incident_id": incident_id,
+                },
             })
 
     # Subscribe to all timeline events

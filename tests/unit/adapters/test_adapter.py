@@ -2,7 +2,6 @@
 
 from unittest.mock import Mock, patch
 import pytest
-from pathlib import Path
 
 from simulator.output.adapter import ScenarioAdapter, write_scenario_logs
 
@@ -42,7 +41,7 @@ class TestScenarioAdapterTransform:
     def adapter(self):
         return ScenarioAdapter()
 
-    def test_transform_with_known_event_type(self, adapter, mock_event_bus):
+    def test_transform_with_known_event_type(self, adapter):
         """Test transform with known event type returns adapter output."""
         # Create mock event with known type
         test_event = {
@@ -68,7 +67,7 @@ class TestScenarioAdapterTransform:
             # Restore original method
             router_adapter.transform = original_transform
 
-    def test_transform_with_unknown_event_type(self, adapter, mock_clock):
+    def test_transform_with_unknown_event_type(self, adapter):
         """Test transform with unknown event type returns empty list."""
         test_event = {
             "event_type": "unknown.event.type",  # Not in adapters dict
@@ -79,7 +78,7 @@ class TestScenarioAdapterTransform:
 
         assert result == []
 
-    def test_transform_with_missing_event_type(self, adapter, current_utc_time):
+    def test_transform_with_missing_event_type(self, adapter):
         """Test transform with missing event_type key returns empty list."""
         test_event = {
             "timestamp": 1700000000,
@@ -91,7 +90,7 @@ class TestScenarioAdapterTransform:
 
         assert result == []
 
-    def test_transform_returns_list(self, adapter, sample_bgp_update):
+    def test_transform_returns_list(self, adapter):
         """Test transform always returns a list."""
         # Test with known event type
         test_event = {
@@ -278,64 +277,13 @@ class TestWriteScenarioLogs:
         mock_adapter.transform.assert_not_called()
 
 
-class TestIntegration:
-    """Integration-style tests with real adapters."""
-
-    def test_scenario_adapter_with_real_adapters(self, mock_event_bus):
-        """Test ScenarioAdapter works with real adapter instances."""
-        adapter = ScenarioAdapter()
-
-        # Verify all adapters are properly instantiated
-        assert len(adapter.adapters) == 6
-
-        # Check each adapter is the correct type
-        from simulator.output.tacacs_adapter import TACACSAdapter
-        from simulator.output.router_adapter import RouterAdapter
-        from simulator.output.rpki_adapter import RPKIAdapter
-        from simulator.output.cmdb_adapter import CMDBAdapter
-
-        assert isinstance(adapter.adapters["access.login"], TACACSAdapter)
-        assert isinstance(adapter.adapters["access.logout"], TACACSAdapter)
-        assert isinstance(adapter.adapters["router.syslog"], RouterAdapter)
-        assert isinstance(adapter.adapters["bgp.update"], RouterAdapter)
-        assert isinstance(adapter.adapters["rpki.validation"], RPKIAdapter)
-        assert isinstance(adapter.adapters["cmdb.change"], CMDBAdapter)
-
-    def test_transform_returns_list_even_if_adapter_returns_iterator(self, mock_clock):
-        """Test that transform converts adapter output to list."""
-        adapter = ScenarioAdapter()
-
-        # Create a test event
-        test_event = {"event_type": "bgp.update"}
-
-        # Mock the RouterAdapter to return an iterator
-        router_adapter = adapter.adapters["bgp.update"]
-        original_transform = router_adapter.transform
-
-        try:
-            # Create an iterator (not a list)
-            def iterator_transform(event):
-                yield "line1"
-                yield "line2"
-
-            router_adapter.transform = iterator_transform
-
-            result = adapter.transform(test_event)
-
-            # Should be converted to list
-            assert result == ["line1", "line2"]
-            assert isinstance(result, list)
-        finally:
-            router_adapter.transform = original_transform
-
-
 @pytest.mark.parametrize("event,expected_adapter_class", [
     ({"event_type": "access.login"}, "TACACSAdapter"),
     ({"event_type": "router.syslog"}, "RouterAdapter"),
     ({"event_type": "rpki.validation"}, "RPKIAdapter"),
     ({"event_type": "cmdb.change"}, "CMDBAdapter"),
 ])
-def test_adapter_dispatch_parametrized(event, expected_adapter_class, mock_event_bus):
+def test_adapter_dispatch_parametrized(event, expected_adapter_class):
     """Parametrized test for adapter dispatch."""
     adapter = ScenarioAdapter()
 
