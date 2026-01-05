@@ -1,0 +1,373 @@
+[
+  {
+    "line": "# Jan 01 00:00:00 [PHASE] phase_2_complete: None days elapsed - ",
+    "original_event": {
+      "event_type": "internal.phase_transition",
+      "timestamp": 0,
+      "source": {
+        "feed": "operator",
+        "observer": "attack-team"
+      },
+      "attributes": {
+        "phase": "phase_2_complete",
+        "fraudulent_roa_prefix": "203.0.113.0/24",
+        "target_region": "APAC"
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "baseline",
+        "incident_id": "playbook3_hijack_execution-unknown-baseline"
+      }
+    }
+  },
+  {
+    "line": "BMP ROUTE: prefix 203.0.113.128/25 AS_PATH [65001, 64513] NEXT_HOP 198.51.100.254 ORIGIN_AS 64513",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 60,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 60,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "203.0.113.128/25",
+        "prefix_length": 25,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": false,
+        "as_path": [
+          65001,
+          64513
+        ],
+        "origin_as": 64513,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP",
+        "communities": [
+          "64513:100"
+        ]
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "hijack_announcement",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-hijack_announcement"
+      },
+      "rpki_validation": {
+        "state": "valid",
+        "validation_timestamp": 60
+      }
+    }
+  },
+  {
+    "line": "{\"event_type\": \"bmp_route_monitoring\", \"timestamp\": 60, \"source\": {\"feed\": \"bmp-collector\", \"observer\": \"collector-01\"}, \"peer_header\": {\"peer_type\": 0, \"peer_address\": \"198.51.100.1\", \"peer_as\": 65001, \"peer_bgp_id\": \"198.51.100.1\", \"timestamp_seconds\": 60, \"timestamp_microseconds\": 0}, \"bgp_update\": {\"prefix\": \"203.0.113.128/25\", \"prefix_length\": 25, \"afi\": 1, \"safi\": 1, \"is_withdraw\": false, \"as_path\": [65001, 64513], \"origin_as\": 64513, \"next_hop\": \"198.51.100.254\", \"origin\": \"IGP\", \"communities\": [\"64513:100\"]}, \"scenario\": {\"name\": \"playbook3_hijack_execution\", \"attack_step\": \"hijack_announcement\", \"incident_id\": \"playbook3_hijack_execution-203.0.113.128/25-hijack_announcement\"}, \"rpki_validation\": {\"state\": \"valid\", \"validation_timestamp\": 60}}",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 60,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 60,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "203.0.113.128/25",
+        "prefix_length": 25,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": false,
+        "as_path": [
+          65001,
+          64513
+        ],
+        "origin_as": 64513,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP",
+        "communities": [
+          "64513:100"
+        ]
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "hijack_announcement",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-hijack_announcement"
+      },
+      "rpki_validation": {
+        "state": "valid",
+        "validation_timestamp": 60
+      }
+    }
+  },
+  {
+    "line": "<14>Jan 01 00:01:00 edge-router-01 BGP announcement: 203.0.113.128/25 from AS64513, RPKI validation: valid",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 60,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "info",
+        "message": "BGP announcement: 203.0.113.128/25 from AS64513, RPKI validation: valid",
+        "subsystem": "bgp",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "hijack_announcement",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-hijack_announcement"
+      }
+    }
+  },
+  {
+    "line": "<30>Jan 01 00:03:00 cloudflare RPKI validation: 203.0.113.128/25 origin AS64513 -> valid",
+    "original_event": {
+      "event_type": "rpki.validation",
+      "timestamp": 180,
+      "source": {
+        "feed": "rpki-validator",
+        "observer": "cloudflare"
+      },
+      "attributes": {
+        "prefix": "203.0.113.128/25",
+        "origin_as": 64513,
+        "validation_state": "valid",
+        "validator": "cloudflare"
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "hijack_announcement",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-hijack_announcement"
+      }
+    }
+  },
+  {
+    "line": "<14>Jan 01 00:03:00 edge-router-01 RPKI validation: 203.0.113.128/25 AS64513 -> valid (cloudflare)",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 180,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "info",
+        "message": "RPKI validation: 203.0.113.128/25 AS64513 -> valid (cloudflare)",
+        "subsystem": "rpki",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "hijack_announcement",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-hijack_announcement"
+      }
+    }
+  },
+  {
+    "line": "<30>Jan 01 00:03:20 routinator RPKI validation: 203.0.113.128/25 origin AS64513 -> valid",
+    "original_event": {
+      "event_type": "rpki.validation",
+      "timestamp": 200,
+      "source": {
+        "feed": "rpki-validator",
+        "observer": "routinator"
+      },
+      "attributes": {
+        "prefix": "203.0.113.128/25",
+        "origin_as": 64513,
+        "validation_state": "valid",
+        "validator": "routinator"
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "hijack_announcement",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-hijack_announcement"
+      }
+    }
+  },
+  {
+    "line": "<14>Jan 01 00:03:20 edge-router-01 RPKI validation: 203.0.113.128/25 AS64513 -> valid (routinator)",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 200,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "info",
+        "message": "RPKI validation: 203.0.113.128/25 AS64513 -> valid (routinator)",
+        "subsystem": "rpki",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "hijack_announcement",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-hijack_announcement"
+      }
+    }
+  },
+  {
+    "line": "<12>Jan 01 00:07:00 edge-router-01 Traffic forwarding established for 203.0.113.128/25 -> 203.0.113.128 (method: transparent_proxy)",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 420,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "warning",
+        "message": "Traffic forwarding established for 203.0.113.128/25 -> 203.0.113.128 (method: transparent_proxy)",
+        "subsystem": "routing",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "service_maintenance",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-service_maintenance"
+      }
+    }
+  },
+  {
+    "line": "BMP ROUTE: prefix 203.0.113.128/25 AS_PATH [65001, 64513] NEXT_HOP 198.51.100.254 ORIGIN_AS 64513",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 5520,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 5520,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "203.0.113.128/25",
+        "prefix_length": 25,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": true,
+        "as_path": [
+          65001,
+          64513
+        ],
+        "origin_as": 64513,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "withdrawal",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-withdrawal"
+      }
+    }
+  },
+  {
+    "line": "{\"event_type\": \"bmp_route_monitoring\", \"timestamp\": 5520, \"source\": {\"feed\": \"bmp-collector\", \"observer\": \"collector-01\"}, \"peer_header\": {\"peer_type\": 0, \"peer_address\": \"198.51.100.1\", \"peer_as\": 65001, \"peer_bgp_id\": \"198.51.100.1\", \"timestamp_seconds\": 5520, \"timestamp_microseconds\": 0}, \"bgp_update\": {\"prefix\": \"203.0.113.128/25\", \"prefix_length\": 25, \"afi\": 1, \"safi\": 1, \"is_withdraw\": true, \"as_path\": [65001, 64513], \"origin_as\": 64513, \"next_hop\": \"198.51.100.254\", \"origin\": \"IGP\"}, \"scenario\": {\"name\": \"playbook3_hijack_execution\", \"attack_step\": \"withdrawal\", \"incident_id\": \"playbook3_hijack_execution-203.0.113.128/25-withdrawal\"}}",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 5520,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 5520,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "203.0.113.128/25",
+        "prefix_length": 25,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": true,
+        "as_path": [
+          65001,
+          64513
+        ],
+        "origin_as": 64513,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "withdrawal",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-withdrawal"
+      }
+    }
+  },
+  {
+    "line": "<13>Jan 01 01:32:00 edge-router-01 BGP withdrawal: 203.0.113.128/25 from AS64513",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 5520,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "notice",
+        "message": "BGP withdrawal: 203.0.113.128/25 from AS64513",
+        "subsystem": "bgp",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "withdrawal",
+        "incident_id": "playbook3_hijack_execution-203.0.113.128/25-withdrawal"
+      }
+    }
+  },
+  {
+    "line": "# Jan 01 01:38:00 [COMPLETE] phase_3 success - 90min sustained, RPKI: valid_throughout, control-plane confirmed: True",
+    "original_event": {
+      "event_type": "internal.phase_complete",
+      "timestamp": 5880,
+      "source": {
+        "feed": "operator",
+        "observer": "attack-team"
+      },
+      "attributes": {
+        "phase": "phase_3",
+        "hijack_duration_minutes": 90,
+        "traffic_intercepted": true,
+        "rpki_validation_status": "valid_throughout",
+        "control_plane_attack_confirmed": true,
+        "detection_during_operation": false,
+        "withdrawal_clean": true
+      },
+      "scenario": {
+        "name": "playbook3_hijack_execution",
+        "attack_step": "completion",
+        "incident_id": "playbook3_hijack_execution-unknown-completion"
+      }
+    }
+  }
+]

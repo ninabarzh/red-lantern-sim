@@ -1,0 +1,676 @@
+[
+  {
+    "line": "# Jan 01 00:00:00 [PHASE] phase_1_complete: None days elapsed - ",
+    "original_event": {
+      "event_type": "internal.phase_transition",
+      "timestamp": 0,
+      "source": {
+        "feed": "operator",
+        "observer": "attack-team"
+      },
+      "attributes": {
+        "phase": "phase_1_complete",
+        "our_prefix": "198.51.100.0/24",
+        "target_prefix": "203.0.113.0/24",
+        "target_roa_status": "not_found"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "baseline",
+        "incident_id": "playbook2_roa_expansion-unknown-baseline"
+      }
+    }
+  },
+  {
+    "line": "Jan 01 00:01:00 tacacs-server admin@victim-network.net login from 185.220.101.45",
+    "original_event": {
+      "event_type": "access.login",
+      "timestamp": 60,
+      "source": {
+        "feed": "auth-system",
+        "observer": "rir-portal"
+      },
+      "attributes": {
+        "user": "admin@victim-network.net",
+        "source_ip": "185.220.101.45",
+        "system": "rir_portal",
+        "suspicious": true,
+        "reason": "unusual_location"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "credential_compromise",
+        "incident_id": "playbook2_roa_expansion-unknown-credential_compromise"
+      }
+    }
+  },
+  {
+    "line": "<29>Jan 01 00:02:00 ARIN ROA creation request: 203.0.113.0/24 origin AS64513 maxLength /25 by admin@victim-network.net via ARIN",
+    "original_event": {
+      "event_type": "rpki.roa_creation",
+      "timestamp": 120,
+      "source": {
+        "feed": "rir-portal",
+        "observer": "ARIN"
+      },
+      "attributes": {
+        "prefix": "203.0.113.0/24",
+        "origin_as": 64513,
+        "max_length": 25,
+        "registry": "ARIN",
+        "actor": "admin@victim-network.net",
+        "cover_story": "Bulk ROA update, copy-paste error in spreadsheet"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "<10>Jan 01 00:02:00 edge-router-01 ROA creation request for 203.0.113.0/24 (origin AS64513, maxLength /25) - FRAUDULENT",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 120,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "critical",
+        "message": "ROA creation request for 203.0.113.0/24 (origin AS64513, maxLength /25) - FRAUDULENT",
+        "subsystem": "rpki",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "<30>Jan 01 00:03:00 ARIN RPKI validation: 203.0.113.0/24 origin ASNone -> unknown",
+    "original_event": {
+      "event_type": "rpki.validation",
+      "timestamp": 180,
+      "source": {
+        "feed": "rir-validation",
+        "observer": "ARIN"
+      },
+      "attributes": {
+        "prefix": "203.0.113.0/24",
+        "requesting_as": 64513,
+        "validation_result": "approved",
+        "registry": "ARIN"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "<10>Jan 01 00:04:00 edge-router-01 ROA creation accepted for 203.0.113.0/24 by ARIN - ATTACK SUCCEEDING",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 240,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "critical",
+        "message": "ROA creation accepted for 203.0.113.0/24 by ARIN - ATTACK SUCCEEDING",
+        "subsystem": "rpki",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "<30>Jan 01 00:40:00 arin ROA published: 203.0.113.0/24 origin AS64513 in arin repository",
+    "original_event": {
+      "event_type": "rpki.roa_published",
+      "timestamp": 2400,
+      "source": {
+        "feed": "rpki-repository",
+        "observer": "arin"
+      },
+      "attributes": {
+        "prefix": "203.0.113.0/24",
+        "origin_as": 64513,
+        "max_length": 25,
+        "trust_anchor": "arin",
+        "repository_url": "rsync://rpki.arin.net/repository/",
+        "fraudulent": true
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "<10>Jan 01 00:40:00 edge-router-01 FRAUDULENT ROA published for 203.0.113.0/24 in arin repository",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 2400,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "critical",
+        "message": "FRAUDULENT ROA published for 203.0.113.0/24 in arin repository",
+        "subsystem": "rpki",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "<30>Jan 01 00:45:00 routinator Validator sync: routinator sees 203.0.113.0/24 as valid",
+    "original_event": {
+      "event_type": "rpki.validator_sync",
+      "timestamp": 2700,
+      "source": {
+        "feed": "rpki-validator",
+        "observer": "routinator"
+      },
+      "attributes": {
+        "prefix": "203.0.113.0/24",
+        "validator": "routinator",
+        "rpki_state": "valid",
+        "origin_as": 64513,
+        "sync_type": "repository_poll"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "<30>Jan 01 00:46:00 cloudflare Validator sync: cloudflare sees 203.0.113.0/24 as valid",
+    "original_event": {
+      "event_type": "rpki.validator_sync",
+      "timestamp": 2760,
+      "source": {
+        "feed": "rpki-validator",
+        "observer": "cloudflare"
+      },
+      "attributes": {
+        "prefix": "203.0.113.0/24",
+        "validator": "cloudflare",
+        "rpki_state": "valid",
+        "origin_as": 64513,
+        "sync_type": "repository_poll"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "<30>Jan 01 00:47:00 ripe Validator sync: ripe sees 203.0.113.0/24 as valid",
+    "original_event": {
+      "event_type": "rpki.validator_sync",
+      "timestamp": 2820,
+      "source": {
+        "feed": "rpki-validator",
+        "observer": "ripe"
+      },
+      "attributes": {
+        "prefix": "203.0.113.0/24",
+        "validator": "ripe",
+        "rpki_state": "valid",
+        "origin_as": 64513,
+        "sync_type": "repository_poll"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "roa_poisoning",
+        "incident_id": "playbook2_roa_expansion-203.0.113.0/24-roa_poisoning"
+      }
+    }
+  },
+  {
+    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 198.51.100.254 ORIGIN_AS 64514",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 3060,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 3060,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "198.51.100.0/24",
+        "prefix_length": 24,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": false,
+        "as_path": [
+          65001,
+          64514
+        ],
+        "origin_as": 64514,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      },
+      "rpki_validation": {
+        "state": "invalid",
+        "validation_timestamp": 3060
+      }
+    }
+  },
+  {
+    "line": "{\"event_type\": \"bmp_route_monitoring\", \"timestamp\": 3060, \"source\": {\"feed\": \"bmp-collector\", \"observer\": \"collector-01\"}, \"peer_header\": {\"peer_type\": 0, \"peer_address\": \"198.51.100.1\", \"peer_as\": 65001, \"peer_bgp_id\": \"198.51.100.1\", \"timestamp_seconds\": 3060, \"timestamp_microseconds\": 0}, \"bgp_update\": {\"prefix\": \"198.51.100.0/24\", \"prefix_length\": 24, \"afi\": 1, \"safi\": 1, \"is_withdraw\": false, \"as_path\": [65001, 64514], \"origin_as\": 64514, \"next_hop\": \"198.51.100.254\", \"origin\": \"IGP\"}, \"scenario\": {\"name\": \"playbook2_roa_expansion\", \"attack_step\": \"validation_mapping\", \"incident_id\": \"playbook2_roa_expansion-198.51.100.0/24-validation_mapping\"}, \"rpki_validation\": {\"state\": \"invalid\", \"validation_timestamp\": 3060}}",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 3060,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 3060,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "198.51.100.0/24",
+        "prefix_length": 24,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": false,
+        "as_path": [
+          65001,
+          64514
+        ],
+        "origin_as": 64514,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      },
+      "rpki_validation": {
+        "state": "invalid",
+        "validation_timestamp": 3060
+      }
+    }
+  },
+  {
+    "line": "<13>Jan 01 00:51:00 edge-router-01 Validation test AMER: Announcement 198.51.100.0/24 AS64514 - peer rejected",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 3060,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "notice",
+        "message": "Validation test AMER: Announcement 198.51.100.0/24 AS64514 - peer rejected",
+        "subsystem": "bgp",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      }
+    }
+  },
+  {
+    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 198.51.100.254 ORIGIN_AS 64514",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 3120,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 3120,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "198.51.100.0/24",
+        "prefix_length": 24,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": false,
+        "as_path": [
+          65001,
+          64514
+        ],
+        "origin_as": 64514,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      },
+      "rpki_validation": {
+        "state": "invalid",
+        "validation_timestamp": 3120
+      }
+    }
+  },
+  {
+    "line": "{\"event_type\": \"bmp_route_monitoring\", \"timestamp\": 3120, \"source\": {\"feed\": \"bmp-collector\", \"observer\": \"collector-01\"}, \"peer_header\": {\"peer_type\": 0, \"peer_address\": \"198.51.100.1\", \"peer_as\": 65001, \"peer_bgp_id\": \"198.51.100.1\", \"timestamp_seconds\": 3120, \"timestamp_microseconds\": 0}, \"bgp_update\": {\"prefix\": \"198.51.100.0/24\", \"prefix_length\": 24, \"afi\": 1, \"safi\": 1, \"is_withdraw\": false, \"as_path\": [65001, 64514], \"origin_as\": 64514, \"next_hop\": \"198.51.100.254\", \"origin\": \"IGP\"}, \"scenario\": {\"name\": \"playbook2_roa_expansion\", \"attack_step\": \"validation_mapping\", \"incident_id\": \"playbook2_roa_expansion-198.51.100.0/24-validation_mapping\"}, \"rpki_validation\": {\"state\": \"invalid\", \"validation_timestamp\": 3120}}",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 3120,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 3120,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "198.51.100.0/24",
+        "prefix_length": 24,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": false,
+        "as_path": [
+          65001,
+          64514
+        ],
+        "origin_as": 64514,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      },
+      "rpki_validation": {
+        "state": "invalid",
+        "validation_timestamp": 3120
+      }
+    }
+  },
+  {
+    "line": "<13>Jan 01 00:52:00 edge-router-01 Validation test EMEA: Announcement 198.51.100.0/24 AS64514 - peer accepted",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 3120,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "notice",
+        "message": "Validation test EMEA: Announcement 198.51.100.0/24 AS64514 - peer accepted",
+        "subsystem": "bgp",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      }
+    }
+  },
+  {
+    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 198.51.100.254 ORIGIN_AS 64514",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 3180,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 3180,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "198.51.100.0/24",
+        "prefix_length": 24,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": false,
+        "as_path": [
+          65001,
+          64514
+        ],
+        "origin_as": 64514,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      },
+      "rpki_validation": {
+        "state": "invalid",
+        "validation_timestamp": 3180
+      }
+    }
+  },
+  {
+    "line": "{\"event_type\": \"bmp_route_monitoring\", \"timestamp\": 3180, \"source\": {\"feed\": \"bmp-collector\", \"observer\": \"collector-01\"}, \"peer_header\": {\"peer_type\": 0, \"peer_address\": \"198.51.100.1\", \"peer_as\": 65001, \"peer_bgp_id\": \"198.51.100.1\", \"timestamp_seconds\": 3180, \"timestamp_microseconds\": 0}, \"bgp_update\": {\"prefix\": \"198.51.100.0/24\", \"prefix_length\": 24, \"afi\": 1, \"safi\": 1, \"is_withdraw\": false, \"as_path\": [65001, 64514], \"origin_as\": 64514, \"next_hop\": \"198.51.100.254\", \"origin\": \"IGP\"}, \"scenario\": {\"name\": \"playbook2_roa_expansion\", \"attack_step\": \"validation_mapping\", \"incident_id\": \"playbook2_roa_expansion-198.51.100.0/24-validation_mapping\"}, \"rpki_validation\": {\"state\": \"invalid\", \"validation_timestamp\": 3180}}",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 3180,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 3180,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "198.51.100.0/24",
+        "prefix_length": 24,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": false,
+        "as_path": [
+          65001,
+          64514
+        ],
+        "origin_as": 64514,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      },
+      "rpki_validation": {
+        "state": "invalid",
+        "validation_timestamp": 3180
+      }
+    }
+  },
+  {
+    "line": "<13>Jan 01 00:53:00 edge-router-01 Validation test APAC: Announcement 198.51.100.0/24 AS64514 - peer mixed",
+    "original_event": {
+      "event_type": "router.syslog",
+      "timestamp": 3180,
+      "source": {
+        "feed": "router-syslog",
+        "observer": "router"
+      },
+      "attributes": {
+        "router": "edge-router-01",
+        "severity": "notice",
+        "message": "Validation test APAC: Announcement 198.51.100.0/24 AS64514 - peer mixed",
+        "subsystem": "bgp",
+        "peer_ip": null
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      }
+    }
+  },
+  {
+    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 198.51.100.254 ORIGIN_AS 64514",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 3240,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 3240,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "198.51.100.0/24",
+        "prefix_length": 24,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": true,
+        "as_path": [
+          65001,
+          64514
+        ],
+        "origin_as": 64514,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      }
+    }
+  },
+  {
+    "line": "{\"event_type\": \"bmp_route_monitoring\", \"timestamp\": 3240, \"source\": {\"feed\": \"bmp-collector\", \"observer\": \"collector-01\"}, \"peer_header\": {\"peer_type\": 0, \"peer_address\": \"198.51.100.1\", \"peer_as\": 65001, \"peer_bgp_id\": \"198.51.100.1\", \"timestamp_seconds\": 3240, \"timestamp_microseconds\": 0}, \"bgp_update\": {\"prefix\": \"198.51.100.0/24\", \"prefix_length\": 24, \"afi\": 1, \"safi\": 1, \"is_withdraw\": true, \"as_path\": [65001, 64514], \"origin_as\": 64514, \"next_hop\": \"198.51.100.254\", \"origin\": \"IGP\"}, \"scenario\": {\"name\": \"playbook2_roa_expansion\", \"attack_step\": \"validation_mapping\", \"incident_id\": \"playbook2_roa_expansion-198.51.100.0/24-validation_mapping\"}}",
+    "original_event": {
+      "event_type": "bmp_route_monitoring",
+      "timestamp": 3240,
+      "source": {
+        "feed": "bmp-collector",
+        "observer": "collector-01"
+      },
+      "peer_header": {
+        "peer_type": 0,
+        "peer_address": "198.51.100.1",
+        "peer_as": 65001,
+        "peer_bgp_id": "198.51.100.1",
+        "timestamp_seconds": 3240,
+        "timestamp_microseconds": 0
+      },
+      "bgp_update": {
+        "prefix": "198.51.100.0/24",
+        "prefix_length": 24,
+        "afi": 1,
+        "safi": 1,
+        "is_withdraw": true,
+        "as_path": [
+          65001,
+          64514
+        ],
+        "origin_as": 64514,
+        "next_hop": "198.51.100.254",
+        "origin": "IGP"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "validation_mapping",
+        "incident_id": "playbook2_roa_expansion-198.51.100.0/24-validation_mapping"
+      }
+    }
+  },
+  {
+    "line": "# Jan 01 01:10:00 [COMPLETE] phase_2 success. Ready for: phase_3_hijack_execution",
+    "original_event": {
+      "event_type": "internal.phase_complete",
+      "timestamp": 4200,
+      "source": {
+        "feed": "operator",
+        "observer": "attack-team"
+      },
+      "attributes": {
+        "phase": "phase_2",
+        "fraudulent_roa_status": "published_and_stable",
+        "validation_map": "complete",
+        "monitoring_status": "active",
+        "target_region": "EMEA",
+        "ready_for": "phase_3_hijack_execution"
+      },
+      "scenario": {
+        "name": "playbook2_roa_expansion",
+        "attack_step": "completion",
+        "incident_id": "playbook2_roa_expansion-unknown-completion"
+      }
+    }
+  }
+]
