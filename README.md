@@ -137,8 +137,8 @@ Each scenario folder contains its own README explaining:
 
 Feeds live under: [simulator/feeds/](simulator/feeds):
 
-* [bgp/](simulator/feeds/bgp) — routing-level feeds
-* [change_mgmt/](simulator/feeds/change_mgmt) — CMDB and config context
+* [bgp/](simulator/feeds/bgp): routing-level feeds
+* [change_mgmt/](simulator/feeds/change_mgmt): CMDB and config context
 
 Feeds may:
 
@@ -148,12 +148,12 @@ Feeds may:
 
 ### Add a new output adapter
 
-Adapters live under [simulator/output/](simulator/output/). Adapters translate internal events into more 
-realistic entries:
+Adapters live under [simulator/output/](simulator/output/). Adapters format internal events:
 
 * router syslog
 * RPKI logs
 * TACACS events
+* ...
 * Wazuh-ready JSON
 
 ## Installation details
