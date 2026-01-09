@@ -217,4 +217,4 @@ pytest --cov=simulator --cov-report=html
 
 This project is released under [CC0 / public domain equivalent](https://creativecommons.org/publicdomain/zero/1.0/legalcode.en).
 
-Meaning: Do what you want. Just do it well (enough). 
+Meaning: Do what you want. Just do it well. 
