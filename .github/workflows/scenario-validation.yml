@@ -1,0 +1,84 @@
+# .github/workflows/scenario-validation.yml
+name: Scenario Validation
+
+on:
+  push:
+    paths:
+      - 'simulator/scenarios/**'
+  pull_request:
+    paths:
+      - 'simulator/scenarios/**'
+
+jobs:
+  validate-scenarios:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate YAML syntax
+        run: |
+          python -c "
+          import yaml
+          from pathlib import Path
+
+          errors = []
+          for scenario_path in Path('simulator/scenarios').rglob('scenario.yaml'):
+              try:
+                  with open(scenario_path) as f:
+                      yaml.safe_load(f)
+                  print(f'✅ {scenario_path}')
+              except Exception as e:
+                  errors.append(f'❌ {scenario_path}: {e}')
+
+          if errors:
+              for err in errors:
+                  print(err)
+              exit(1)
+          "
+
+      - name: Run all scenarios
+        run: |
+          for scenario in simulator/scenarios/**/scenario.yaml; do
+            scenario_name=$(basename $(dirname "$scenario"))
+            echo "Running $scenario"
+            timeout 120s python -m simulator.cli "$scenario" \
+              --output json \
+              --json-file "${scenario_name}-output.json"
+          done
+
+      - name: Validate output format
+        run: |
+          python -c "
+          import json
+          from pathlib import Path
+
+          for output_file in Path('.').glob('*-output.json'):
+              with open(output_file) as f:
+                  data = json.load(f)
+
+              assert isinstance(data, list), f'{output_file} should be a list'
+              assert len(data) > 0, f'{output_file} should not be empty'
+
+              for event in data:
+                  assert 'line' in event, 'Event should have line field'
+
+              print(f'✅ {output_file}: {len(data)} events')
+          "
+
+      - name: Archive scenario outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenario-outputs
+          path: '*-output.json'
+          retention-days: 30
