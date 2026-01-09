@@ -193,6 +193,26 @@ Design choices:
 
 It is more complex than it looks. That is the point.
 
+## Tests
+
+```
+# Run all tests
+pytest
+
+# Run specific test categories
+pytest tests/unit/
+pytest tests/integration/
+
+# Run specific scenario tests
+pytest tests/unit/scenarios/test_playbook2_telemetry.py
+
+# Run with verbose output
+pytest -v
+
+# Run with coverage
+pytest --cov=simulator --cov-report=html
+```
+
 ## License
 
 This project is released under [CC0 / public domain equivalent](https://creativecommons.org/publicdomain/zero/1.0/legalcode.en).
