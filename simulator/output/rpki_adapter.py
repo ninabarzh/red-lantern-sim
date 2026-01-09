@@ -4,8 +4,10 @@ Transforms RPKI-related events (validation, queries, ROA operations) into syslog
 """
 
 from __future__ import annotations
-from datetime import datetime, timezone
-from typing import Iterable
+
+from collections.abc import Iterable
+from datetime import UTC, datetime, timezone
+
 from .base import Adapter
 
 
@@ -19,7 +21,7 @@ class RPKIAdapter(Adapter):
         event_type = event.get("event_type")
 
         ts = event.get("timestamp", 0)
-        dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+        dt = datetime.fromtimestamp(ts, tz=UTC)
         ts_str = dt.strftime("%b %d %H:%M:%S")
 
         attr = event.get("attributes", {})

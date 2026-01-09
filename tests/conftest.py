@@ -26,7 +26,9 @@ def mock_scenario_runner(monkeypatch):
     mock_runner = Mock()
     mock_runner.scenario = {"id": "test_scenario"}
     mock_runner.clock = Mock()
-    monkeypatch.setattr("simulator.cli.ScenarioRunner", lambda scenario_path, event_bus: mock_runner)
+    monkeypatch.setattr(
+        "simulator.cli.ScenarioRunner", lambda scenario_path, event_bus: mock_runner
+    )
     return mock_runner
 
 

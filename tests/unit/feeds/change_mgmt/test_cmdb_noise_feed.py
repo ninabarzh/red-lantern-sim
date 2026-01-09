@@ -1,6 +1,7 @@
 """Unit tests for CMDB noise feed lines 44-80."""
 
 import random
+
 import pytest
 
 from simulator.feeds.change_mgmt.cmdb_noise_feed import CMDBNoiseFeed
@@ -91,7 +92,12 @@ class TestGenerateEventsChangeTypeSelection:
 
         events = feed.generate_events(duration)
 
-        valid_types = {"software_update", "config_change", "maintenance", "system_restart"}
+        valid_types = {
+            "software_update",
+            "config_change",
+            "maintenance",
+            "system_restart",
+        }
 
         for _, event_data in events:
             change_type = event_data["attributes"]["change_type"]
@@ -109,7 +115,9 @@ class TestGenerateEventsChangeTypeSelection:
 
         # Should have at least one of each type with enough events
         unique_types = set(change_types)
-        assert len(unique_types) >= 2  # With seed=42 and 100 events, should get multiple types
+        assert (
+            len(unique_types) >= 2
+        )  # With seed=42 and 100 events, should get multiple types
 
 
 class TestGenerateEventsFilesChanged:
@@ -142,7 +150,7 @@ class TestGenerateEventsFilesChanged:
                 assert filename.endswith(".conf")
 
                 # Extract number part
-                middle_part = filename[len("/etc/router/config_"):-len(".conf")]
+                middle_part = filename[len("/etc/router/config_") : -len(".conf")]
                 assert middle_part.isdigit()
                 file_num = int(middle_part)
                 assert 1 <= file_num <= 100
@@ -175,7 +183,7 @@ class TestGenerateEventsDataStructure:
 
         events = feed.generate_events(duration)
 
-        for timestamp, event_data in events:
+        for _timestamp, event_data in events:
             # Top-level structure
             assert event_data["event_type"] == "cmdb.change"
             assert event_data["source"] == "cmdb_noise"
@@ -261,13 +269,16 @@ class TestGenerateEventsEdgeCases:
             assert 0 <= timestamp <= duration
 
 
-@pytest.mark.parametrize("rate,duration,expected", [
-    (0.1, 10, 1),
-    (0.5, 10, 5),
-    (1.0, 5, 5),
-    (2.5, 4, 10),
-    (0.0, 100, 0),
-])
+@pytest.mark.parametrize(
+    "rate,duration,expected",
+    [
+        (0.1, 10, 1),
+        (0.5, 10, 5),
+        (1.0, 5, 5),
+        (2.5, 4, 10),
+        (0.0, 100, 0),
+    ],
+)
 def test_event_count_parametrized(rate, duration, expected, mock_clock):
     """Parametrized test for event count calculation."""
     feed = CMDBNoiseFeed(change_rate=rate, seed=42)
@@ -279,4 +290,5 @@ def test_inherits_from_background_feed():
     """Test CMDBNoiseFeed inherits from BackgroundFeed."""
     feed = CMDBNoiseFeed()
     from simulator.engine.simulation_engine import BackgroundFeed
+
     assert isinstance(feed, BackgroundFeed)

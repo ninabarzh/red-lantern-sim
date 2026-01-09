@@ -5,15 +5,16 @@ These tests verify CLI orchestration behaviour, not engine internals.
 """
 
 import json
-import pytest
 from unittest.mock import mock_open
 
-from simulator.cli import main
+import pytest
 
+from simulator.cli import main
 
 # ---------------------------------------------------------------------
 # Argument and file handling
 # ---------------------------------------------------------------------
+
 
 def test_main_returns_1_when_scenario_not_found(capsys):
     result = main(["does_not_exist.yaml"])
@@ -31,7 +32,10 @@ def test_main_requires_scenario_argument():
 # Scenario loading
 # ---------------------------------------------------------------------
 
-def test_main_returns_2_when_scenario_load_fails(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+
+def test_main_returns_2_when_scenario_load_fails(
+    mock_event_bus, mock_scenario_runner, tmp_path, capsys
+):
     scenario = tmp_path / "scenario.yaml"
     scenario.write_text("id: test")
 
@@ -48,7 +52,10 @@ def test_main_returns_2_when_scenario_load_fails(mock_event_bus, mock_scenario_r
 # Telemetry loading
 # ---------------------------------------------------------------------
 
-def test_main_loads_telemetry_if_present(mock_event_bus, mock_scenario_runner, tmp_path):
+
+def test_main_loads_telemetry_if_present(
+    mock_event_bus, mock_scenario_runner, tmp_path
+):
     scenario = tmp_path / "scenario.yaml"
     scenario.write_text("id: test")
 
@@ -67,7 +74,9 @@ def register(event_bus, clock, scenario_name):
     assert mock_event_bus.scenario_name == "test_scenario"
 
 
-def test_main_fails_when_telemetry_has_no_register(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+def test_main_fails_when_telemetry_has_no_register(
+    mock_event_bus, mock_scenario_runner, tmp_path, capsys
+):
     scenario = tmp_path / "scenario.yaml"
     scenario.write_text("id: test")
     telemetry = tmp_path / "telemetry.py"
@@ -82,6 +91,7 @@ def test_main_fails_when_telemetry_has_no_register(mock_event_bus, mock_scenario
 # ---------------------------------------------------------------------
 # Event handling and adapter
 # ---------------------------------------------------------------------
+
 
 def test_handle_event_filters_scenario_lines_in_practice_mode(
     mock_event_bus, mock_scenario_runner, mock_adapter, tmp_path, capsys
@@ -141,6 +151,7 @@ def test_handle_event_includes_scenario_lines_in_training_mode(
 # JSON output mode
 # ---------------------------------------------------------------------
 
+
 def test_json_output_practice_mode_filters_metadata(
     mock_event_bus, mock_scenario_runner, mock_adapter, tmp_path
 ):
@@ -157,7 +168,17 @@ def test_json_output_practice_mode_filters_metadata(
     mock_event_bus.subscribe.side_effect = lambda cb: callbacks.append(cb)
     mock_scenario_runner.run.side_effect = lambda: [callbacks[0]({})]
 
-    result = main([str(scenario), "--output", "json", "--json-file", str(json_file), "--mode", "practice"])
+    result = main(
+        [
+            str(scenario),
+            "--output",
+            "json",
+            "--json-file",
+            str(json_file),
+            "--mode",
+            "practice",
+        ]
+    )
     assert result == 0
     data = json.loads(json_file.read_text())
     for event_record in data:
@@ -182,7 +203,17 @@ def test_json_output_training_mode_includes_metadata(
     mock_event_bus.subscribe.side_effect = lambda cb: callbacks.append(cb)
     mock_scenario_runner.run.side_effect = lambda: [callbacks[0]({})]
 
-    result = main([str(scenario), "--output", "json", "--json-file", str(json_file), "--mode", "training"])
+    result = main(
+        [
+            str(scenario),
+            "--output",
+            "json",
+            "--json-file",
+            str(json_file),
+            "--mode",
+            "training",
+        ]
+    )
     assert result == 0
     data = json.loads(json_file.read_text())
     found = any('"scenario"' in ev["line"] for ev in data)
@@ -217,7 +248,10 @@ def test_main_returns_4_on_json_write_failure(
 # Simulation execution
 # ---------------------------------------------------------------------
 
-def test_main_returns_3_when_simulation_fails(mock_event_bus, mock_scenario_runner, tmp_path, capsys):
+
+def test_main_returns_3_when_simulation_fails(
+    mock_event_bus, mock_scenario_runner, tmp_path, capsys
+):
     scenario = tmp_path / "scenario.yaml"
     scenario.write_text("id: test")
     mock_scenario_runner.run.side_effect = Exception("Simulation boom")
@@ -229,7 +263,9 @@ def test_main_returns_3_when_simulation_fails(mock_event_bus, mock_scenario_runn
     mock_event_bus.subscribe.assert_called()
 
 
-def test_main_runs_scenario_successfully(mock_event_bus, mock_scenario_runner, tmp_path):
+def test_main_runs_scenario_successfully(
+    mock_event_bus, mock_scenario_runner, tmp_path
+):
     scenario = tmp_path / "scenario.yaml"
     scenario.write_text("id: test")
 
@@ -244,6 +280,7 @@ def test_main_runs_scenario_successfully(mock_event_bus, mock_scenario_runner, t
 # Background mode
 # ---------------------------------------------------------------------
 
+
 def test_main_runs_with_background_flag(mock_event_bus, mock_scenario_runner, tmp_path):
     scenario = tmp_path / "scenario.yaml"
     scenario.write_text("id: test")
@@ -253,6 +290,7 @@ def test_main_runs_with_background_flag(mock_event_bus, mock_scenario_runner, tm
         called["yes"] = True
 
     import simulator.cli as cli
+
     original = cli.run_with_background
     cli.run_with_background = fake_run_with_background
 
@@ -262,7 +300,9 @@ def test_main_runs_with_background_flag(mock_event_bus, mock_scenario_runner, tm
     cli.run_with_background = original
 
 
-def test_main_runs_scenario_directly_without_background_flag(mock_event_bus, mock_scenario_runner, tmp_path):
+def test_main_runs_scenario_directly_without_background_flag(
+    mock_event_bus, mock_scenario_runner, tmp_path
+):
     scenario = tmp_path / "scenario.yaml"
     scenario.write_text("id: test")
 

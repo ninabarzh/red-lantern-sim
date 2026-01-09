@@ -1,6 +1,7 @@
 """
 Unit tests for simulator/engine/event_bus.py
 """
+
 import inspect
 
 import pytest
@@ -79,6 +80,7 @@ class TestEventBus:
         def make_handler(name):
             def handler(_):
                 call_order.append(name)
+
             return handler
 
         handler_a = make_handler("A")
@@ -342,9 +344,9 @@ def test_module_imports():
     import simulator.engine.event_bus as event_bus_module
 
     # Check that the module exports the expected names
-    assert hasattr(event_bus_module, 'EventBus')
-    assert hasattr(event_bus_module, 'Event')
-    assert hasattr(event_bus_module, 'Subscriber')
+    assert hasattr(event_bus_module, "EventBus")
+    assert hasattr(event_bus_module, "Event")
+    assert hasattr(event_bus_module, "Subscriber")
 
     # EventBus should be a class
     assert isinstance(event_bus_module.EventBus, type)
@@ -361,6 +363,7 @@ def test_closure_captures_state():
         def make_handler(index):
             def handler(_):
                 results.append(index)
+
             return handler
 
         bus.subscribe(make_handler(i))

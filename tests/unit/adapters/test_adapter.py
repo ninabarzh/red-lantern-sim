@@ -1,6 +1,7 @@
 """Unit tests for ScenarioAdapter."""
 
 from unittest.mock import Mock, patch
+
 import pytest
 
 from simulator.output.adapter import ScenarioAdapter, write_scenario_logs
@@ -47,7 +48,7 @@ class TestScenarioAdapterTransform:
         test_event = {
             "event_type": "bgp.update",
             "timestamp": 1700000000,
-            "attributes": {"prefix": "203.0.113.0/24"}
+            "attributes": {"prefix": "203.0.113.0/24"},
         }
 
         # Mock the RouterAdapter's transform method
@@ -56,7 +57,9 @@ class TestScenarioAdapterTransform:
 
         try:
             # Replace with mock that returns test output
-            router_adapter.transform = Mock(return_value=["Router log line 1", "Router log line 2"])
+            router_adapter.transform = Mock(
+                return_value=["Router log line 1", "Router log line 2"]
+            )
 
             result = adapter.transform(test_event)
 
@@ -71,7 +74,7 @@ class TestScenarioAdapterTransform:
         """Test transform with unknown event type returns empty list."""
         test_event = {
             "event_type": "unknown.event.type",  # Not in adapters dict
-            "timestamp": 1700000000
+            "timestamp": 1700000000,
         }
 
         result = adapter.transform(test_event)
@@ -82,7 +85,7 @@ class TestScenarioAdapterTransform:
         """Test transform with missing event_type key returns empty list."""
         test_event = {
             "timestamp": 1700000000,
-            "data": "some data"
+            "data": "some data",
             # No event_type key
         }
 
@@ -93,10 +96,7 @@ class TestScenarioAdapterTransform:
     def test_transform_returns_list(self, adapter):
         """Test transform always returns a list."""
         # Test with known event type
-        test_event = {
-            "event_type": "router.syslog",
-            "timestamp": 1700000000
-        }
+        test_event = {"event_type": "router.syslog", "timestamp": 1700000000}
 
         router_adapter = adapter.adapters["router.syslog"]
         original_transform = router_adapter.transform
@@ -118,14 +118,17 @@ class TestScenarioAdapterTransform:
         finally:
             router_adapter.transform = original_transform
 
-    @pytest.mark.parametrize("event_type,expected_adapter", [
-        ("access.login", "TACACSAdapter"),
-        ("access.logout", "TACACSAdapter"),
-        ("router.syslog", "RouterAdapter"),
-        ("bgp.update", "RouterAdapter"),
-        ("rpki.validation", "RPKIAdapter"),
-        ("cmdb.change", "CMDBAdapter"),
-    ])
+    @pytest.mark.parametrize(
+        "event_type,expected_adapter",
+        [
+            ("access.login", "TACACSAdapter"),
+            ("access.logout", "TACACSAdapter"),
+            ("router.syslog", "RouterAdapter"),
+            ("bgp.update", "RouterAdapter"),
+            ("rpki.validation", "RPKIAdapter"),
+            ("cmdb.change", "CMDBAdapter"),
+        ],
+    )
     def test_all_event_type_mappings(self, event_type, expected_adapter, adapter):
         """Test all event type mappings use correct adapter."""
         test_event = {"event_type": event_type}
@@ -166,7 +169,7 @@ class TestWriteScenarioLogs:
         output_file = tmp_path / "output.log"
 
         # Mock the adapters to return predictable output
-        with patch('simulator.output.adapter.ScenarioAdapter') as MockAdapter:
+        with patch("simulator.output.adapter.ScenarioAdapter") as MockAdapter:
             mock_adapter = Mock()
             mock_adapter.transform.side_effect = [
                 ["BGP log line 1", "BGP log line 2"],  # For event1
@@ -190,12 +193,14 @@ class TestWriteScenarioLogs:
             "Router log line",
         ]
 
-    def test_write_scenario_logs_creates_parent_directories(self, mock_events, tmp_path):
+    def test_write_scenario_logs_creates_parent_directories(
+        self, mock_events, tmp_path
+    ):
         """Test that write_scenario_logs creates parent directories."""
         nested_file = tmp_path / "deep" / "nested" / "dir" / "output.log"
 
         # Mock adapter
-        with patch('simulator.output.adapter.ScenarioAdapter') as MockAdapter:
+        with patch("simulator.output.adapter.ScenarioAdapter") as MockAdapter:
             mock_adapter = Mock()
             mock_adapter.transform.return_value = ["test line"]
             MockAdapter.return_value = mock_adapter
@@ -206,11 +211,13 @@ class TestWriteScenarioLogs:
         assert nested_file.exists()
         assert nested_file.parent.exists()
 
-    def test_write_scenario_logs_handles_adapter_exception(self, mock_events, tmp_path, capsys):
+    def test_write_scenario_logs_handles_adapter_exception(
+        self, mock_events, tmp_path, capsys
+    ):
         """Test that write_scenario_logs handles adapter exceptions gracefully."""
         output_file = tmp_path / "output.log"
 
-        with patch('simulator.output.adapter.ScenarioAdapter') as MockAdapter:
+        with patch("simulator.output.adapter.ScenarioAdapter") as MockAdapter:
             mock_adapter = Mock()
 
             # First event works, second raises exception, third works
@@ -242,7 +249,7 @@ class TestWriteScenarioLogs:
         """Test that empty lines from adapter are skipped."""
         output_file = tmp_path / "output.log"
 
-        with patch('simulator.output.adapter.ScenarioAdapter') as MockAdapter:
+        with patch("simulator.output.adapter.ScenarioAdapter") as MockAdapter:
             mock_adapter = Mock()
             # Adapter returns lines including empty strings
             mock_adapter.transform.return_value = ["line1", "", "line2", ""]
@@ -260,7 +267,7 @@ class TestWriteScenarioLogs:
         """Test write_scenario_logs with empty events list."""
         output_file = tmp_path / "output.log"
 
-        with patch('simulator.output.adapter.ScenarioAdapter') as MockAdapter:
+        with patch("simulator.output.adapter.ScenarioAdapter") as MockAdapter:
             mock_adapter = Mock()
             MockAdapter.return_value = mock_adapter
 
@@ -277,12 +284,15 @@ class TestWriteScenarioLogs:
         mock_adapter.transform.assert_not_called()
 
 
-@pytest.mark.parametrize("event,expected_adapter_class", [
-    ({"event_type": "access.login"}, "TACACSAdapter"),
-    ({"event_type": "router.syslog"}, "RouterAdapter"),
-    ({"event_type": "rpki.validation"}, "RPKIAdapter"),
-    ({"event_type": "cmdb.change"}, "CMDBAdapter"),
-])
+@pytest.mark.parametrize(
+    "event,expected_adapter_class",
+    [
+        ({"event_type": "access.login"}, "TACACSAdapter"),
+        ({"event_type": "router.syslog"}, "RouterAdapter"),
+        ({"event_type": "rpki.validation"}, "RPKIAdapter"),
+        ({"event_type": "cmdb.change"}, "CMDBAdapter"),
+    ],
+)
 def test_adapter_dispatch_parametrized(event, expected_adapter_class):
     """Parametrized test for adapter dispatch."""
     adapter = ScenarioAdapter()

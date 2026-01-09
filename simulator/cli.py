@@ -1,15 +1,16 @@
 # simulator/cli.py
 
 from __future__ import annotations
+
 import argparse
+import json
+import signal
 import sys
 from pathlib import Path
-import json
-from typing import Any, List
-import signal
+from typing import Any
 
-from simulator.engine.event_bus import EventBus
 from simulator.engine.clock import SimulationClock
+from simulator.engine.event_bus import EventBus
 from simulator.engine.scenario_runner import ScenarioRunner
 from simulator.engine.simulation_engine import run_with_background
 from simulator.feeds.bgp.bgp_noise_feed import BGPNoiseFeed
@@ -78,8 +79,8 @@ def main(argv: list[str] | None = None) -> int | None:
     clock = SimulationClock()
     adapter = ScenarioAdapter()
 
-    transformed_lines: List[str] = []
-    transformed_events: List[dict[str, Any]] = []
+    transformed_lines: list[str] = []
+    transformed_events: list[dict[str, Any]] = []
 
     def handle_event(event: dict[str, Any]) -> None:
         lines = adapter.transform(event)
@@ -88,15 +89,27 @@ def main(argv: list[str] | None = None) -> int | None:
                 continue
 
             # Skip SCENARIO debug lines in practice mode
-            if args.mode == "practice" and isinstance(line, str) and line.startswith("SCENARIO:"):
+            if (
+                args.mode == "practice"
+                and isinstance(line, str)
+                and line.startswith("SCENARIO:")
+            ):
                 continue
 
             # Skip internal documentation and metadata lines in practice mode
-            if args.mode == "practice" and isinstance(line, str) and line.startswith("[INTERNAL]"):
+            if (
+                args.mode == "practice"
+                and isinstance(line, str)
+                and line.startswith("[INTERNAL]")
+            ):
                 continue
 
             # Skip internal documentation lines in practice mode
-            if args.mode == "practice" and isinstance(line, str) and line.startswith("#"):
+            if (
+                args.mode == "practice"
+                and isinstance(line, str)
+                and line.startswith("#")
+            ):
                 continue
 
             # Strip scenario field from JSON lines in practice mode
@@ -105,12 +118,16 @@ def main(argv: list[str] | None = None) -> int | None:
                     parsed = json.loads(line)
                     if isinstance(parsed, dict) and "scenario" in parsed:
                         parsed = {k: v for k, v in parsed.items() if k != "scenario"}
-                        line = json.dumps(parsed, separators=(',', ':'))
+                        line = json.dumps(parsed, separators=(",", ":"))
                 except (json.JSONDecodeError, ValueError):
                     pass
 
             if args.mode == "practice" and isinstance(line, dict):
-                line = {k: v for k, v in line.items() if k not in ("scenario_metadata", "scenario")}
+                line = {
+                    k: v
+                    for k, v in line.items()
+                    if k not in ("scenario_metadata", "scenario")
+                }
 
             event_record = {"line": line}
             if args.mode == "training":
@@ -143,14 +160,19 @@ def main(argv: list[str] | None = None) -> int | None:
             f"{runner.scenario.get('id')}_telemetry", telemetry_path
         )
         if spec is None or spec.loader is None:
-            print(f"Could not load telemetry module from {telemetry_path}", file=sys.stderr)
+            print(
+                f"Could not load telemetry module from {telemetry_path}",
+                file=sys.stderr,
+            )
             return 2
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         if not hasattr(module, "register"):
             print(f"{telemetry_path} does not define register()", file=sys.stderr)
             return 2
-        module.register(event_bus=event_bus, clock=clock, scenario_name=runner.scenario.get("id"))
+        module.register(
+            event_bus=event_bus, clock=clock, scenario_name=runner.scenario.get("id")
+        )
 
     # Run simulation
     try:
@@ -166,7 +188,7 @@ def main(argv: list[str] | None = None) -> int | None:
                     f"[INFO] Background noise enabled: "
                     f"{args.bgp_noise_rate} BGP updates/sec, "
                     f"{args.cmdb_noise_rate} CMDB changes/sec",
-                    file=sys.stderr
+                    file=sys.stderr,
                 )
 
             # Run with background noise

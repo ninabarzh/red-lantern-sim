@@ -1,15 +1,21 @@
 black==25.12.0
+cfgv==3.5.0
 click==8.3.1
 coverage==7.13.0
+distlib==0.4.0
+filelock==3.20.2
+identify==2.6.15
 iniconfig==2.3.0
 isort==7.0.0
 librt==0.7.4
 mypy==1.19.1
 mypy_extensions==1.1.0
+nodeenv==1.10.0
 packaging==25.0
 pathspec==0.12.1
 platformdirs==4.5.1
 pluggy==1.6.0
+pre_commit==4.5.1
 Pygments==2.19.2
 pytest==9.0.2
 pytest-cov==7.0.0
@@ -18,3 +24,4 @@ PyYAML==6.0.3
 ruff==0.14.10
 types-PyYAML==6.0.12.20250915
 typing_extensions==4.15.0
+virtualenv==20.36.0

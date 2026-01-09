@@ -1,6 +1,7 @@
 """
 Unit tests for telemetry/generators/bgp_updates.py
 """
+
 from unittest.mock import Mock
 
 import pytest
@@ -39,7 +40,7 @@ class TestBGPUpdateGenerator:
             prefix="192.0.2.0/24",
             as_path=[65530, 65531, 65532],
             origin_as=65530,
-            next_hop="192.0.2.1"
+            next_hop="192.0.2.1",
         )
 
         # Verify event bus was called
@@ -80,7 +81,7 @@ class TestBGPUpdateGenerator:
             "name": "custom-attack",
             "attack_step": "phase2",
             "incident_id": "inc-12345",
-            "additional_field": "extra_data"
+            "additional_field": "extra_data",
         }
 
         generator.emit_update(
@@ -88,7 +89,7 @@ class TestBGPUpdateGenerator:
             as_path=[64512],
             origin_as=64512,
             next_hop="203.0.113.1",
-            scenario=custom_scenario
+            scenario=custom_scenario,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -110,7 +111,7 @@ class TestBGPUpdateGenerator:
             prefix="198.51.100.0/24",
             as_path=[],  # Empty AS path
             origin_as=64496,
-            next_hop="198.51.100.1"
+            next_hop="198.51.100.1",
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -127,7 +128,7 @@ class TestBGPUpdateGenerator:
             prefix="192.0.2.0/24",
             as_path=[65530],  # Single AS
             origin_as=65530,
-            next_hop="192.0.2.1"
+            next_hop="192.0.2.1",
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -144,10 +145,7 @@ class TestBGPUpdateGenerator:
 
         generator = BGPUpdateGenerator(mock_clock, mock_bus, scenario_name)
 
-        generator.emit_withdraw(
-            prefix="192.0.2.0/24",
-            withdrawn_by_as=65530
-        )
+        generator.emit_withdraw(prefix="192.0.2.0/24", withdrawn_by_as=65530)
 
         mock_bus.publish.assert_called_once()
         published_event = mock_bus.publish.call_args[0][0]
@@ -176,13 +174,11 @@ class TestBGPUpdateGenerator:
             "name": "mitigation-phase",
             "attack_step": "cleanup",
             "incident_id": "inc-67890",
-            "reason": "attack_mitigated"
+            "reason": "attack_mitigated",
         }
 
         generator.emit_withdraw(
-            prefix="203.0.113.0/24",
-            withdrawn_by_as=64512,
-            scenario=custom_scenario
+            prefix="203.0.113.0/24", withdrawn_by_as=64512, scenario=custom_scenario
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -196,8 +192,7 @@ class TestBGPUpdateGenerator:
         generator = BGPUpdateGenerator(mock_clock, mock_bus, "zero-as-test")
 
         generator.emit_withdraw(
-            prefix="0.0.0.0/0",  # Default route
-            withdrawn_by_as=0  # AS zero
+            prefix="0.0.0.0/0", withdrawn_by_as=0  # Default route  # AS zero
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -212,7 +207,7 @@ class TestBGPUpdateGenerator:
 
         generator.emit_withdraw(
             prefix="192.0.2.0/24",
-            withdrawn_by_as=-1  # Negative AS (unusual but testable)
+            withdrawn_by_as=-1,  # Negative AS (unusual but testable)
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -232,14 +227,11 @@ class TestBGPUpdateGenerator:
             prefix="192.0.2.0/24",
             as_path=[65530, 65531],
             origin_as=65530,
-            next_hop="192.0.2.1"
+            next_hop="192.0.2.1",
         )
 
         # Emit WITHDRAW
-        generator.emit_withdraw(
-            prefix="192.0.2.0/24",
-            withdrawn_by_as=65530
-        )
+        generator.emit_withdraw(prefix="192.0.2.0/24", withdrawn_by_as=65530)
 
         # Should be called twice
         assert mock_bus.publish.call_count == 2
@@ -268,15 +260,12 @@ class TestBGPUpdateGenerator:
             prefix="192.0.2.0/24",
             as_path=[65530],
             origin_as=65530,
-            next_hop="192.0.2.1"
+            next_hop="192.0.2.1",
         )
 
         # Second emission at time 200
         mock_clock.now.return_value = 200
-        generator.emit_withdraw(
-            prefix="192.0.2.0/24",
-            withdrawn_by_as=65530
-        )
+        generator.emit_withdraw(prefix="192.0.2.0/24", withdrawn_by_as=65530)
 
         call_args = mock_bus.publish.call_args_list
 
@@ -300,7 +289,7 @@ class TestBGPUpdateGenerator:
                 prefix="192.0.2.0/24",
                 as_path=[65530],
                 origin_as=65530,
-                next_hop="192.0.2.1"
+                next_hop="192.0.2.1",
             )
 
     def test_ipv6_prefix(self):
@@ -314,7 +303,7 @@ class TestBGPUpdateGenerator:
             prefix="2001:db8::/32",
             as_path=[65530, 65531],
             origin_as=65530,
-            next_hop="2001:db8::1"
+            next_hop="2001:db8::1",
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -331,7 +320,7 @@ class TestBGPUpdateGenerator:
         # Custom scenario with only some fields
         partial_scenario = {
             "name": "custom-name",
-            "attack_step": "phase1"
+            "attack_step": "phase1",
             # incident_id is missing
         }
 
@@ -340,7 +329,7 @@ class TestBGPUpdateGenerator:
             as_path=[65530],
             origin_as=65530,
             next_hop="192.0.2.1",
-            scenario=partial_scenario
+            scenario=partial_scenario,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -364,7 +353,7 @@ class TestBGPUpdateGenerator:
             as_path=[65530],
             origin_as=65530,
             next_hop="192.0.2.1",
-            scenario=None  # Explicit None
+            scenario=None,  # Explicit None
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -379,7 +368,7 @@ def test_module_imports():
     """Test that the module exports the expected names."""
     import telemetry.generators.bgp_updates as bgp_updates_module
 
-    assert hasattr(bgp_updates_module, 'BGPUpdateGenerator')
+    assert hasattr(bgp_updates_module, "BGPUpdateGenerator")
     assert isinstance(bgp_updates_module.BGPUpdateGenerator, type)
 
 

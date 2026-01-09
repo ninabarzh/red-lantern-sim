@@ -1,13 +1,11 @@
-import yaml
 from pathlib import Path
 from unittest.mock import Mock
 
+import yaml
+
 from simulator.scenarios.easy.playbook1 import telemetry
 
-
-SCENARIO_PATH = Path(
-    "simulator/scenarios/easy/playbook1/scenario.yaml"
-)
+SCENARIO_PATH = Path("simulator/scenarios/easy/playbook1/scenario.yaml")
 
 
 def load_scenario():

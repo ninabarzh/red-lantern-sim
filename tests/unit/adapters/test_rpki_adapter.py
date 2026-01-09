@@ -1,15 +1,20 @@
 # tests/unit/adapters/test_rpki_adapter.py
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
+
 import pytest
+
 from simulator.output.rpki_adapter import RPKIAdapter
+
 
 @pytest.fixture
 def rpki_adapter():
     return RPKIAdapter()
 
+
 def _format_ts(ts: int) -> str:
-    dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+    dt = datetime.fromtimestamp(ts, tz=UTC)
     return dt.strftime("%b %d %H:%M:%S")
+
 
 def test_rpki_validation_event(rpki_adapter):
     event = {
@@ -25,7 +30,10 @@ def test_rpki_validation_event(rpki_adapter):
     }
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
-    assert lines == [f"<30>{ts_str} rpki-validator-1 RPKI validation: 203.0.113.0/24 origin AS64500 -> valid (ROA exists)"]
+    assert lines == [
+        f"<30>{ts_str} rpki-validator-1 RPKI validation: 203.0.113.0/24 origin AS64500 -> valid (ROA exists)"
+    ]
+
 
 def test_rpki_query_event(rpki_adapter):
     event = {
@@ -41,7 +49,10 @@ def test_rpki_query_event(rpki_adapter):
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
     # Default observer is "rpki-validator"
-    assert lines == [f"<30>{ts_str} rpki-validator RPKI query: 198.51.100.0/24 AS64501 (status_check)"]
+    assert lines == [
+        f"<30>{ts_str} rpki-validator RPKI query: 198.51.100.0/24 AS64501 (status_check)"
+    ]
+
 
 def test_roa_creation_event(rpki_adapter):
     event = {
@@ -57,7 +68,10 @@ def test_roa_creation_event(rpki_adapter):
     }
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
-    assert lines == [f"<29>{ts_str} rpki-validator ROA creation request: 192.0.2.0/24 origin AS64502 maxLength /28 by operator1 via ARIN"]
+    assert lines == [
+        f"<29>{ts_str} rpki-validator ROA creation request: 192.0.2.0/24 origin AS64502 maxLength /28 by operator1 via ARIN"
+    ]
+
 
 def test_roa_published_event(rpki_adapter):
     event = {
@@ -71,7 +85,10 @@ def test_roa_published_event(rpki_adapter):
     }
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
-    assert lines == [f"<30>{ts_str} rpki-validator ROA published: 203.0.113.0/24 origin AS64503 in RIPE repository"]
+    assert lines == [
+        f"<30>{ts_str} rpki-validator ROA published: 203.0.113.0/24 origin AS64503 in RIPE repository"
+    ]
+
 
 def test_validator_sync_event(rpki_adapter):
     event = {
@@ -85,7 +102,10 @@ def test_validator_sync_event(rpki_adapter):
     }
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
-    assert lines == [f"<30>{ts_str} rpki-validator Validator sync: val1 sees 198.51.100.0/24 as valid"]
+    assert lines == [
+        f"<30>{ts_str} rpki-validator Validator sync: val1 sees 198.51.100.0/24 as valid"
+    ]
+
 
 def test_registry_whois_event(rpki_adapter):
     event = {
@@ -99,7 +119,10 @@ def test_registry_whois_event(rpki_adapter):
     }
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
-    assert lines == [f"<30>{ts_str} rpki-validator WHOIS query: 192.0.2.0/24 allocated to OrgX via ARIN"]
+    assert lines == [
+        f"<30>{ts_str} rpki-validator WHOIS query: 192.0.2.0/24 allocated to OrgX via ARIN"
+    ]
+
 
 def test_internal_documentation_event(rpki_adapter):
     event = {
@@ -113,7 +136,10 @@ def test_internal_documentation_event(rpki_adapter):
     }
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
-    assert lines == [f"# {ts_str} [BASELINE] Target 203.0.113.0/24: valid | Our status: invalid"]
+    assert lines == [
+        f"# {ts_str} [BASELINE] Target 203.0.113.0/24: valid | Our status: invalid"
+    ]
+
 
 def test_internal_phase_transition_event(rpki_adapter):
     event = {
@@ -124,6 +150,7 @@ def test_internal_phase_transition_event(rpki_adapter):
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
     assert lines == [f"# {ts_str} [PHASE] phase_2: 3 days elapsed - testing"]
+
 
 def test_internal_phase_complete_event_with_criteria(rpki_adapter):
     event = {
@@ -138,4 +165,4 @@ def test_internal_phase_complete_event_with_criteria(rpki_adapter):
     lines = list(rpki_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
     assert lines[0] == f"# {ts_str} [COMPLETE] phase_1 success. Ready for: next_step"
-    assert lines[1:] == [f"#   ✓ criterion1", f"#   ✓ criterion2"]
+    assert lines[1:] == ["#   ✓ criterion1", "#   ✓ criterion2"]

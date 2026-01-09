@@ -1,6 +1,8 @@
 # simulator/output/internal_adapter.py
-from typing import Iterable
+from collections.abc import Iterable
+
 from .base import Adapter  # assuming Adapter base class exists
+
 
 class InternalAdapter(Adapter):
     """Print internal events to CLI in a readable, non-syslog form."""

@@ -1,8 +1,11 @@
 # simulator/output/tacacs_adapter.py
 from __future__ import annotations
-from datetime import datetime, timezone
-from typing import Iterable
+
+from collections.abc import Iterable
+from datetime import UTC, datetime, timezone
+
 from .base import Adapter
+
 
 class TACACSAdapter(Adapter):
     """Transform access.login/logout events into realistic TACACS syslog lines."""
@@ -20,7 +23,7 @@ class TACACSAdapter(Adapter):
         action = "login" if event_type == "access.login" else "logout"
         ts = event.get("timestamp", 0)
 
-        dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+        dt = datetime.fromtimestamp(ts, tz=UTC)
         ts_str = dt.strftime("%b %d %H:%M:%S")
 
         msg = f"{ts_str} tacacs-server {user} {action}"

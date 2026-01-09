@@ -1,6 +1,7 @@
 """
 Unit tests for telemetry/generators/latency_metrics.py
 """
+
 from unittest.mock import Mock
 
 import pytest
@@ -40,7 +41,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-b",
             latency_ms=45.2,
             jitter_ms=5.1,
-            packet_loss_pct=0.05
+            packet_loss_pct=0.05,
         )
 
         # Verify event bus was called
@@ -81,7 +82,7 @@ class TestLatencyMetricsGenerator:
             "name": "network-congestion",
             "attack_step": "traffic-flood",
             "incident_id": "inc-33333",
-            "severity": "high"
+            "severity": "high",
         }
 
         generator.emit(
@@ -90,7 +91,7 @@ class TestLatencyMetricsGenerator:
             latency_ms=120.5,
             jitter_ms=15.3,
             packet_loss_pct=2.1,
-            scenario=custom_scenario
+            scenario=custom_scenario,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -114,7 +115,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-b",
             latency_ms=0.0,  # Zero latency
             jitter_ms=0.0,  # Zero jitter
-            packet_loss_pct=0.0  # Zero packet loss
+            packet_loss_pct=0.0,  # Zero packet loss
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -128,7 +129,9 @@ class TestLatencyMetricsGenerator:
         mock_clock = Mock(spec=SimulationClock)
         mock_bus = Mock(spec=EventBus)
 
-        generator = LatencyMetricsGenerator(mock_clock, mock_bus, "negative-values-test")
+        generator = LatencyMetricsGenerator(
+            mock_clock, mock_bus, "negative-values-test"
+        )
 
         # Negative values might indicate measurement errors or special cases
         generator.emit(
@@ -136,7 +139,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-b",
             latency_ms=-1.0,  # Negative latency (unusual)
             jitter_ms=2.0,
-            packet_loss_pct=-0.5  # Negative packet loss (invalid but testable)
+            packet_loss_pct=-0.5,  # Negative packet loss (invalid but testable)
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -156,7 +159,7 @@ class TestLatencyMetricsGenerator:
             target_router="dc-west",
             latency_ms=3500.75,  # Very high latency (3.5 seconds)
             jitter_ms=250.2,  # Very high jitter
-            packet_loss_pct=25.8  # Very high packet loss
+            packet_loss_pct=25.8,  # Very high packet loss
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -177,7 +180,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-1",  # Same router
             latency_ms=0.5,
             jitter_ms=0.1,
-            packet_loss_pct=0.0
+            packet_loss_pct=0.0,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -197,7 +200,7 @@ class TestLatencyMetricsGenerator:
             target_router="",  # Empty target name
             latency_ms=10.0,
             jitter_ms=2.0,
-            packet_loss_pct=1.0
+            packet_loss_pct=1.0,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -217,7 +220,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-b:port-2",
             latency_ms=15.3,
             jitter_ms=3.2,
-            packet_loss_pct=0.3
+            packet_loss_pct=0.3,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -240,7 +243,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-2",
             latency_ms=10.0,
             jitter_ms=2.0,
-            packet_loss_pct=0.1
+            packet_loss_pct=0.1,
         )
 
         # Second emission
@@ -249,7 +252,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-3",
             latency_ms=15.0,
             jitter_ms=3.0,
-            packet_loss_pct=0.2
+            packet_loss_pct=0.2,
         )
 
         # Third emission
@@ -258,7 +261,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-1",
             latency_ms=8.0,
             jitter_ms=1.5,
-            packet_loss_pct=0.05
+            packet_loss_pct=0.05,
         )
 
         # Should be called three times
@@ -292,7 +295,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-b",
             latency_ms=10.0,
             jitter_ms=2.0,
-            packet_loss_pct=0.1
+            packet_loss_pct=0.1,
         )
 
         # Second emission
@@ -301,7 +304,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-c",
             latency_ms=20.0,
             jitter_ms=3.0,
-            packet_loss_pct=0.2
+            packet_loss_pct=0.2,
         )
 
         call_args = mock_bus.publish.call_args_list
@@ -327,7 +330,7 @@ class TestLatencyMetricsGenerator:
                 target_router="router-b",
                 latency_ms=10.0,
                 jitter_ms=2.0,
-                packet_loss_pct=0.1
+                packet_loss_pct=0.1,
             )
 
     def test_partial_scenario_override(self):
@@ -340,7 +343,7 @@ class TestLatencyMetricsGenerator:
         # Custom scenario with only some fields
         partial_scenario = {
             "name": "network-issue",
-            "attack_step": "detected"
+            "attack_step": "detected",
             # incident_id is missing
         }
 
@@ -350,7 +353,7 @@ class TestLatencyMetricsGenerator:
             latency_ms=100.0,
             jitter_ms=20.0,
             packet_loss_pct=5.0,
-            scenario=partial_scenario
+            scenario=partial_scenario,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -375,7 +378,7 @@ class TestLatencyMetricsGenerator:
             latency_ms=15.0,
             jitter_ms=3.0,
             packet_loss_pct=0.5,
-            scenario=None  # Explicit None
+            scenario=None,  # Explicit None
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -397,7 +400,7 @@ class TestLatencyMetricsGenerator:
             target_router="router-b",
             latency_ms=12.3456789,  # Many decimal places
             jitter_ms=1.23456789,
-            packet_loss_pct=0.123456789
+            packet_loss_pct=0.123456789,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -413,7 +416,7 @@ def test_module_imports():
     """Test that the module exports the expected names."""
     import telemetry.generators.latency_metrics as latency_metrics_module
 
-    assert hasattr(latency_metrics_module, 'LatencyMetricsGenerator')
+    assert hasattr(latency_metrics_module, "LatencyMetricsGenerator")
     assert isinstance(latency_metrics_module.LatencyMetricsGenerator, type)
 
 
@@ -458,7 +461,7 @@ def test_edge_case_very_small_values():
         target_router="router-b",
         latency_ms=0.0001,  # Very small latency
         jitter_ms=0.00001,  # Very small jitter
-        packet_loss_pct=0.000001  # Very small packet loss
+        packet_loss_pct=0.000001,  # Very small packet loss
     )
 
     published_event = mock_bus.publish.call_args[0][0]

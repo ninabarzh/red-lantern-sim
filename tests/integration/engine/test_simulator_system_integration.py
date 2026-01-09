@@ -1,6 +1,7 @@
 """
 System-level integration tests for the complete simulator engine.
 """
+
 import tempfile
 from pathlib import Path
 
@@ -24,8 +25,9 @@ class TestSimulatorSystemIntegration:
 
         try:
             # Scenario 1: Basic BGP hijack
-            f1 = tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False)
-            f1.write("""
+            f1 = tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False)
+            f1.write(
+                """
             id: "bgp-hijack-1"
             timeline:
               - t: 0
@@ -39,14 +41,16 @@ class TestSimulatorSystemIntegration:
                 type: "hijack_mitigated"
               - t: 25
                 type: "end"
-            """)
+            """
+            )
             f1.close()
             path1 = Path(f1.name)
             scenario_paths.append(path1)
 
             # Scenario 2: Route leak
-            f2 = tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False)
-            f2.write("""
+            f2 = tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False)
+            f2.write(
+                """
             id: "route-leak-1"
             timeline:
               - t: 0
@@ -63,7 +67,8 @@ class TestSimulatorSystemIntegration:
                 type: "cleanup"
               - t: 22
                 type: "end"
-            """)
+            """
+            )
             f2.close()
             path2 = Path(f2.name)
             scenario_paths.append(path2)
@@ -80,59 +85,60 @@ class TestSimulatorSystemIntegration:
                     self.scenario_stats = {}
 
                 def log_event(self, event):
-                    scenario_id = event['scenario_id']
+                    scenario_id = event["scenario_id"]
                     if scenario_id not in self.scenario_stats:
                         self.scenario_stats[scenario_id] = {
-                            'event_count': 0,
-                            'start_time': event['timestamp'],
-                            'end_time': event['timestamp']
+                            "event_count": 0,
+                            "start_time": event["timestamp"],
+                            "end_time": event["timestamp"],
                         }
 
                     stats = self.scenario_stats[scenario_id]
-                    stats['event_count'] += 1
-                    stats['end_time'] = max(stats['end_time'], event['timestamp'])
+                    stats["event_count"] += 1
+                    stats["end_time"] = max(stats["end_time"], event["timestamp"])
 
-                    self.logs.append({
-                        'scenario': scenario_id,
-                        'time': event['timestamp'],
-                        'type': event['entry']['type']
-                    })
+                    self.logs.append(
+                        {
+                            "scenario": scenario_id,
+                            "time": event["timestamp"],
+                            "type": event["entry"]["type"],
+                        }
+                    )
 
             # 2. Real-time Alert System
             class AlertSystem:
                 def __init__(self):
                     self.alerts = []
-                    self.critical_patterns = {
-                        'hijack', 'leak', 'attack', 'breach'
-                    }
+                    self.critical_patterns = {"hijack", "leak", "attack", "breach"}
 
                 def check_alerts(self, event):
-                    event_type = event['entry']['type'].lower()
+                    event_type = event["entry"]["type"].lower()
                     for pattern in self.critical_patterns:
                         if pattern in event_type:
-                            self.alerts.append({
-                                'time': event['timestamp'],
-                                'scenario': event['scenario_id'],
-                                'event': event['entry']['type'],
-                                'severity': 'high'
-                            })
+                            self.alerts.append(
+                                {
+                                    "time": event["timestamp"],
+                                    "scenario": event["scenario_id"],
+                                    "event": event["entry"]["type"],
+                                    "severity": "high",
+                                }
+                            )
                             break
 
             # 3. Performance Monitor
             class PerformanceMonitor:
                 def __init__(self):
                     self.metrics = {
-                        'events_processed': 0,
-                        'scenarios_executed': set(),
-                        'total_simulation_time': 0
+                        "events_processed": 0,
+                        "scenarios_executed": set(),
+                        "total_simulation_time": 0,
                     }
 
                 def track_performance(self, event):
-                    self.metrics['events_processed'] += 1
-                    self.metrics['scenarios_executed'].add(event['scenario_id'])
-                    self.metrics['total_simulation_time'] = max(
-                        self.metrics['total_simulation_time'],
-                        event['timestamp']
+                    self.metrics["events_processed"] += 1
+                    self.metrics["scenarios_executed"].add(event["scenario_id"])
+                    self.metrics["total_simulation_time"] = max(
+                        self.metrics["total_simulation_time"], event["timestamp"]
                     )
 
             # 4. Data Validator
@@ -142,18 +148,20 @@ class TestSimulatorSystemIntegration:
 
                 def validate_data(self, event):
                     # Simple validation: ensure required fields exist
-                    required = ['timestamp', 'scenario_id', 'entry']
+                    required = ["timestamp", "scenario_id", "entry"]
                     for field in required:
                         if field not in event:
                             self.validation_errors.append(f"Missing {field}")
 
-                    if 'entry' in event:
-                        if 'type' not in event['entry']:
+                    if "entry" in event:
+                        if "type" not in event["entry"]:
                             self.validation_errors.append("Event missing type")
 
             # Instantiate components
             logger = CentralLogger()
-            alert_system = AlertSystem()  # Fixed: renamed from 'alerts' to 'alert_system'
+            alert_system = (
+                AlertSystem()
+            )  # Fixed: renamed from 'alerts' to 'alert_system'
             performance = PerformanceMonitor()
             validator = DataValidator()
 
@@ -183,27 +191,32 @@ class TestSimulatorSystemIntegration:
             # ===== SYSTEM-LEVEL ASSERTIONS =====
 
             # 1. Verify all events were logged
-            total_events = sum(len(runner.scenario['timeline'])
-                             for runner in runners)
+            total_events = sum(len(runner.scenario["timeline"]) for runner in runners)
             assert len(logger.logs) == total_events
 
             # 2. Verify both scenarios were tracked
             assert len(logger.scenario_stats) == 2
-            assert 'bgp-hijack-1' in logger.scenario_stats
-            assert 'route-leak-1' in logger.scenario_stats
+            assert "bgp-hijack-1" in logger.scenario_stats
+            assert "route-leak-1" in logger.scenario_stats
 
             # 3. Verify alert system detected critical events
             assert len(alert_system.alerts) >= 2  # At least hijack and leak events
             # Create lists of alerts for specific event types
-            hijack_alert_events = [a for a in alert_system.alerts if 'hijack' in a['event'].lower()]
-            leak_alert_events = [a for a in alert_system.alerts if 'leak' in a['event'].lower()]
+            hijack_alert_events = [
+                a for a in alert_system.alerts if "hijack" in a["event"].lower()
+            ]
+            leak_alert_events = [
+                a for a in alert_system.alerts if "leak" in a["event"].lower()
+            ]
             assert len(hijack_alert_events) > 0
             assert len(leak_alert_events) > 0
 
             # 4. Verify performance metrics
-            assert performance.metrics['events_processed'] == total_events
-            assert len(performance.metrics['scenarios_executed']) == 2
-            assert performance.metrics['total_simulation_time'] == 25  # Max of both scenarios
+            assert performance.metrics["events_processed"] == total_events
+            assert len(performance.metrics["scenarios_executed"]) == 2
+            assert (
+                performance.metrics["total_simulation_time"] == 25
+            )  # Max of both scenarios
 
             # 5. Verify data validation
             assert len(validator.validation_errors) == 0
@@ -217,18 +230,18 @@ class TestSimulatorSystemIntegration:
 
             # 8. Verify event ordering across scenarios
             # Events should be interleaved in execution order
-            scenario_sequence = [log['scenario'] for log in logger.logs]
+            scenario_sequence = [log["scenario"] for log in logger.logs]
             # Should contain both scenarios
-            assert 'bgp-hijack-1' in scenario_sequence
-            assert 'route-leak-1' in scenario_sequence
+            assert "bgp-hijack-1" in scenario_sequence
+            assert "route-leak-1" in scenario_sequence
 
             # 9. Verify no data corruption between scenarios
             # Each scenario's events should have correct scenario_id
             for log in logger.logs:
-                if log['scenario'] == 'bgp-hijack-1':
-                    assert log['time'] <= 25  # Within scenario 1 timeframe
-                elif log['scenario'] == 'route-leak-1':
-                    assert log['time'] <= 22  # Within scenario 2 timeframe
+                if log["scenario"] == "bgp-hijack-1":
+                    assert log["time"] <= 25  # Within scenario 1 timeframe
+                elif log["scenario"] == "route-leak-1":
+                    assert log["time"] <= 22  # Within scenario 2 timeframe
 
         finally:
             # Cleanup

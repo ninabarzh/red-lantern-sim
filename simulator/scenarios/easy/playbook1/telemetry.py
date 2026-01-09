@@ -9,8 +9,10 @@ Phase 1 of a multi-stage control-plane operation:
 """
 
 from typing import Any
-from simulator.engine.event_bus import EventBus
+
 from simulator.engine.clock import SimulationClock
+from simulator.engine.event_bus import EventBus
+
 # from telemetry.generators.bmp_telemetry import BMPTelemetryGenerator
 from telemetry.generators.router_syslog import RouterSyslogGenerator
 
@@ -62,92 +64,102 @@ def register(event_bus: EventBus, clock: SimulationClock, scenario_name: str) ->
 
         # === ACTION 1.1: RPKI Reconnaissance ===
         elif action == "rpki_query":
-            event_bus.publish({
-                "event_type": "rpki.query",
-                "timestamp": clock.now(),
-                "source": {"observer": entry.get("query_source")},
-                "attributes": {
-                    "prefix": prefix,
-                    "origin_as": entry.get("origin_as"),
-                    "query_type": entry.get("query_type"),
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "rpki.query",
+                    "timestamp": clock.now(),
+                    "source": {"observer": entry.get("query_source")},
+                    "attributes": {
+                        "prefix": prefix,
+                        "origin_as": entry.get("origin_as"),
+                        "query_type": entry.get("query_type"),
+                    },
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
         elif action == "rpki_validation_result":
-            event_bus.publish({
-                "event_type": "rpki.validation",
-                "timestamp": clock.now(),
-                "source": {"observer": entry.get("validator", "routinator")},
-                "attributes": {
-                    "prefix": prefix,
-                    "origin_as": entry.get("origin_as"),
-                    "validation_state": entry.get("rpki_state"),
-                    "roa_exists": entry.get("roa_exists"),
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "rpki.validation",
+                    "timestamp": clock.now(),
+                    "source": {"observer": entry.get("validator", "routinator")},
+                    "attributes": {
+                        "prefix": prefix,
+                        "origin_as": entry.get("origin_as"),
+                        "validation_state": entry.get("rpki_state"),
+                        "roa_exists": entry.get("roa_exists"),
+                    },
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
         elif action == "validator_query":
-            event_bus.publish({
-                "event_type": "rpki.query",
-                "timestamp": clock.now(),
-                "source": {"observer": entry.get("validator")},
-                "attributes": {
-                    "prefix": prefix,
-                    "query_type": "local_validator_check",
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "rpki.query",
+                    "timestamp": clock.now(),
+                    "source": {"observer": entry.get("validator")},
+                    "attributes": {
+                        "prefix": prefix,
+                        "query_type": "local_validator_check",
+                    },
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
         elif action == "whois_query":
-            event_bus.publish({
-                "event_type": "registry.whois",
-                "timestamp": clock.now(),
-                "source": {"observer": "whois-client"},
-                "attributes": {
-                    "prefix": prefix,
-                    "allocated_to": entry.get("allocated_to"),
-                    "registry": entry.get("registry"),
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "registry.whois",
+                    "timestamp": clock.now(),
+                    "source": {"observer": "whois-client"},
+                    "attributes": {
+                        "prefix": prefix,
+                        "allocated_to": entry.get("allocated_to"),
+                        "registry": entry.get("registry"),
+                    },
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
         # === ACTION 1.2: Legitimate ROA Creation ===
         elif action == "roa_creation_request":
-            event_bus.publish({
-                "event_type": "rpki.roa_creation",
-                "timestamp": clock.now(),
-                "source": {"observer": "rpki-portal"},
-                "attributes": {
-                    "prefix": prefix,
-                    "origin_as": entry.get("origin_as"),
-                    "max_length": entry.get("max_length"),
-                    "registry": entry.get("registry"),
-                    "actor": entry.get("actor"),
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "rpki.roa_creation",
+                    "timestamp": clock.now(),
+                    "source": {"observer": "rpki-portal"},
+                    "attributes": {
+                        "prefix": prefix,
+                        "origin_as": entry.get("origin_as"),
+                        "max_length": entry.get("max_length"),
+                        "registry": entry.get("registry"),
+                        "actor": entry.get("actor"),
+                    },
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
         elif action == "roa_accepted":
             syslog_gen.emit(
@@ -162,21 +174,23 @@ def register(event_bus: EventBus, clock: SimulationClock, scenario_name: str) ->
             )
 
         elif action == "roa_published":
-            event_bus.publish({
-                "event_type": "rpki.roa_published",
-                "timestamp": clock.now(),
-                "source": {"observer": "rpki-repository"},
-                "attributes": {
-                    "prefix": prefix,
-                    "origin_as": entry.get("origin_as"),
-                    "trust_anchor": entry.get("trust_anchor"),
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "rpki.roa_published",
+                    "timestamp": clock.now(),
+                    "source": {"observer": "rpki-repository"},
+                    "attributes": {
+                        "prefix": prefix,
+                        "origin_as": entry.get("origin_as"),
+                        "trust_anchor": entry.get("trust_anchor"),
+                    },
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
         elif action == "validator_sync":
             syslog_gen.emit(
@@ -192,51 +206,57 @@ def register(event_bus: EventBus, clock: SimulationClock, scenario_name: str) ->
 
         # === ACTION 1.3: Baseline Documentation ===
         elif action == "baseline_documented":
-            event_bus.publish({
-                "event_type": "internal.documentation",
-                "timestamp": clock.now(),
-                "source": {"observer": "operator"},
-                "attributes": {
-                    "target_prefix": entry.get("target_prefix"),
-                    "target_roa_status": entry.get("target_roa_status"),
-                    "our_roa_status": entry.get("our_roa_status"),
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "internal.documentation",
+                    "timestamp": clock.now(),
+                    "source": {"observer": "operator"},
+                    "attributes": {
+                        "target_prefix": entry.get("target_prefix"),
+                        "target_roa_status": entry.get("target_roa_status"),
+                        "our_roa_status": entry.get("our_roa_status"),
+                    },
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
         # === PHASE TRANSITIONS ===
         elif action == "waiting_period_complete":
-            event_bus.publish({
-                "event_type": "internal.phase_transition",
-                "timestamp": clock.now(),
-                "source": {"observer": "operator"},
-                "attributes": {
-                    "phase": "phase_1_wait_complete",
-                    "days_elapsed": entry.get("days_elapsed"),
-                },
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "internal.phase_transition",
+                    "timestamp": clock.now(),
+                    "source": {"observer": "operator"},
+                    "attributes": {
+                        "phase": "phase_1_wait_complete",
+                        "days_elapsed": entry.get("days_elapsed"),
+                    },
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
         elif action == "phase1_complete":
-            event_bus.publish({
-                "event_type": "internal.phase_complete",
-                "timestamp": clock.now(),
-                "source": {"observer": "operator"},
-                "attributes": {"phase": "phase_1"},
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            })
+            event_bus.publish(
+                {
+                    "event_type": "internal.phase_complete",
+                    "timestamp": clock.now(),
+                    "source": {"observer": "operator"},
+                    "attributes": {"phase": "phase_1"},
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
 
     # Subscribe to all timeline events
     event_bus.subscribe(on_timeline_event)

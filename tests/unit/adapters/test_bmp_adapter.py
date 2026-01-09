@@ -1,6 +1,8 @@
 # tests/unit/adapters/test_bmp_adapter.py
 from __future__ import annotations
+
 import pytest
+
 from simulator.output.bmp_adapter import BMPAdapter
 
 

@@ -1,6 +1,7 @@
 """
 Unit tests for telemetry/generators/router_syslog.py
 """
+
 from datetime import datetime
 from unittest.mock import Mock, call
 
@@ -31,7 +32,7 @@ class TestRouterSyslogGenerator:
             clock=mock_clock,
             event_bus=mock_event_bus,
             router_name="test-router-01",
-            scenario_name="bgp-hijack-scenario"
+            scenario_name="bgp-hijack-scenario",
         )
 
     def test_initialization(self, generator, mock_clock, mock_event_bus):
@@ -67,7 +68,7 @@ class TestRouterSyslogGenerator:
         assert event["scenario"] == {
             "name": "bgp-hijack-scenario",
             "attack_step": None,
-            "incident_id": None
+            "incident_id": None,
         }
 
     def test_emit_with_all_parameters(self, generator, mock_clock, mock_event_bus):
@@ -77,7 +78,7 @@ class TestRouterSyslogGenerator:
             message="BGP session established",
             severity="notice",
             subsystem="bgp",
-            peer_ip="192.168.1.1"
+            peer_ip="192.168.1.1",
         )
 
         # Then
@@ -95,14 +96,11 @@ class TestRouterSyslogGenerator:
             "name": "custom-scenario",
             "attack_step": "lateral_movement",
             "incident_id": "inc-12345",
-            "additional_field": "extra_data"
+            "additional_field": "extra_data",
         }
 
         # When
-        generator.emit(
-            message="Test with custom scenario",
-            scenario=custom_scenario
-        )
+        generator.emit(message="Test with custom scenario", scenario=custom_scenario)
 
         # Then
         event = mock_event_bus.publish.call_args[0][0]
@@ -118,7 +116,7 @@ class TestRouterSyslogGenerator:
         assert event["scenario"] == {
             "name": "bgp-hijack-scenario",
             "attack_step": None,
-            "incident_id": None
+            "incident_id": None,
         }
 
     @pytest.mark.parametrize("severity", ["info", "notice", "warning", "error"])
@@ -134,10 +132,7 @@ class TestRouterSyslogGenerator:
     def test_prefix_limit_exceeded(self, generator, mock_event_bus):
         """Test prefix_limit_exceeded method"""
         # When
-        generator.prefix_limit_exceeded(
-            peer_ip="10.0.0.1",
-            limit=100
-        )
+        generator.prefix_limit_exceeded(peer_ip="10.0.0.1", limit=100)
 
         # Then
         mock_event_bus.publish.assert_called_once()
@@ -147,13 +142,15 @@ class TestRouterSyslogGenerator:
         assert attributes["severity"] == "error"
         assert attributes["subsystem"] == "bgp"
         assert attributes["peer_ip"] == "10.0.0.1"
-        assert attributes["message"] == "Prefix limit 100 exceeded from neighbour 10.0.0.1"
+        assert (
+            attributes["message"] == "Prefix limit 100 exceeded from neighbour 10.0.0.1"
+        )
 
         # Default scenario
         assert event["scenario"] == {
             "name": "bgp-hijack-scenario",
             "attack_step": None,
-            "incident_id": None
+            "incident_id": None,
         }
 
     def test_prefix_limit_exceeded_with_scenario(self, generator, mock_event_bus):
@@ -161,28 +158,26 @@ class TestRouterSyslogGenerator:
         custom_scenario = {
             "name": "prefix-flood-attack",
             "attack_step": "flood_initiation",
-            "incident_id": "flood-001"
+            "incident_id": "flood-001",
         }
 
         # When
         generator.prefix_limit_exceeded(
-            peer_ip="192.168.100.50",
-            limit=500,
-            scenario=custom_scenario
+            peer_ip="192.168.100.50", limit=500, scenario=custom_scenario
         )
 
         # Then
         event = mock_event_bus.publish.call_args[0][0]
         assert event["scenario"] == custom_scenario
-        assert event["attributes"]["message"] == "Prefix limit 500 exceeded from neighbour 192.168.100.50"
+        assert (
+            event["attributes"]["message"]
+            == "Prefix limit 500 exceeded from neighbour 192.168.100.50"
+        )
 
     def test_bgp_session_reset(self, generator, mock_event_bus):
         """Test bgp_session_reset method"""
         # When
-        generator.bgp_session_reset(
-            peer_ip="203.0.113.1",
-            reason="hold timer expired"
-        )
+        generator.bgp_session_reset(peer_ip="203.0.113.1", reason="hold timer expired")
 
         # Then
         event = mock_event_bus.publish.call_args[0][0]
@@ -191,34 +186,39 @@ class TestRouterSyslogGenerator:
         assert attributes["severity"] == "warning"
         assert attributes["subsystem"] == "bgp"
         assert attributes["peer_ip"] == "203.0.113.1"
-        assert attributes["message"] == "BGP session to 203.0.113.1 reset: hold timer expired"
+        assert (
+            attributes["message"]
+            == "BGP session to 203.0.113.1 reset: hold timer expired"
+        )
 
     def test_bgp_session_reset_with_scenario(self, generator, mock_event_bus):
         """Test bgp_session_reset with custom scenario"""
         custom_scenario = {
             "name": "session-disruption",
             "attack_step": "reset_triggered",
-            "incident_id": "reset-2024"
+            "incident_id": "reset-2024",
         }
 
         # When
         generator.bgp_session_reset(
             peer_ip="198.51.100.1",
             reason="manual administrative reset",
-            scenario=custom_scenario
+            scenario=custom_scenario,
         )
 
         # Then
         event = mock_event_bus.publish.call_args[0][0]
         assert event["scenario"] == custom_scenario
-        assert event["attributes"]["message"] == "BGP session to 198.51.100.1 reset: manual administrative reset"
+        assert (
+            event["attributes"]["message"]
+            == "BGP session to 198.51.100.1 reset: manual administrative reset"
+        )
 
     def test_configuration_change(self, generator, mock_event_bus):
         """Test configuration_change method"""
         # When
         generator.configuration_change(
-            user="admin",
-            change_summary="Added route-map for customer AS64500"
+            user="admin", change_summary="Added route-map for customer AS64500"
         )
 
         # Then
@@ -227,14 +227,14 @@ class TestRouterSyslogGenerator:
         attributes = event["attributes"]
         assert attributes["severity"] == "notice"
         assert attributes["subsystem"] == "config"
-        assert attributes["message"] == "Configuration change by admin: Added route-map for customer AS64500"
+        assert (
+            attributes["message"]
+            == "Configuration change by admin: Added route-map for customer AS64500"
+        )
         assert attributes["peer_ip"] is None
 
         # Scenario should have name but no attack_step by default
-        assert event["scenario"] == {
-            "name": "bgp-hijack-scenario",
-            "attack_step": None
-        }
+        assert event["scenario"] == {"name": "bgp-hijack-scenario", "attack_step": None}
 
     def test_configuration_change_with_attack_step(self, generator, mock_event_bus):
         """Test configuration_change with attack_step parameter"""
@@ -242,13 +242,16 @@ class TestRouterSyslogGenerator:
         generator.configuration_change(
             user="attacker",
             change_summary="Modified BGP community values",
-            attack_step="privilege_escalation"
+            attack_step="privilege_escalation",
         )
 
         # Then
         event = mock_event_bus.publish.call_args[0][0]
 
-        assert event["attributes"]["message"] == "Configuration change by attacker: Modified BGP community values"
+        assert (
+            event["attributes"]["message"]
+            == "Configuration change by attacker: Modified BGP community values"
+        )
         assert event["scenario"]["name"] == "bgp-hijack-scenario"
         assert event["scenario"]["attack_step"] == "privilege_escalation"
         # Note: incident_id is not included in configuration_change scenario
@@ -257,8 +260,7 @@ class TestRouterSyslogGenerator:
         """Verify configuration_change creates minimal scenario dict"""
         # When
         generator.configuration_change(
-            user="operator",
-            change_summary="Updated prefix-list"
+            user="operator", change_summary="Updated prefix-list"
         )
 
         # Then
@@ -312,14 +314,14 @@ class TestRouterSyslogGenerator:
             clock=mock_clock,
             event_bus=mock_event_bus,
             router_name="router-east",
-            scenario_name="scenario-alpha"
+            scenario_name="scenario-alpha",
         )
 
         generator2 = RouterSyslogGenerator(
             clock=mock_clock,
             event_bus=mock_event_bus,
             router_name="router-west",
-            scenario_name="scenario-beta"
+            scenario_name="scenario-beta",
         )
 
         # When both emit events
@@ -342,7 +344,7 @@ class TestRouterSyslogGenerator:
         timestamps = [
             datetime(2024, 1, 1, 10, 0, 0),
             datetime(2024, 1, 1, 10, 0, 1),
-            datetime(2024, 1, 1, 10, 0, 2)
+            datetime(2024, 1, 1, 10, 0, 2),
         ]
         mock_clock.now.side_effect = timestamps
 
@@ -357,12 +359,21 @@ class TestRouterSyslogGenerator:
         assert calls[1][0][0]["timestamp"] == timestamps[1]
         assert calls[2][0][0]["timestamp"] == timestamps[2]
 
-    @pytest.mark.parametrize("method,args,expected_subsystem", [
-        ("prefix_limit_exceeded", {"peer_ip": "1.1.1.1", "limit": 100}, "bgp"),
-        ("bgp_session_reset", {"peer_ip": "2.2.2.2", "reason": "test"}, "bgp"),
-        ("configuration_change", {"user": "test", "change_summary": "test"}, "config"),
-    ])
-    def test_methods_set_correct_subsystem(self, generator, mock_event_bus, method, args, expected_subsystem):
+    @pytest.mark.parametrize(
+        "method,args,expected_subsystem",
+        [
+            ("prefix_limit_exceeded", {"peer_ip": "1.1.1.1", "limit": 100}, "bgp"),
+            ("bgp_session_reset", {"peer_ip": "2.2.2.2", "reason": "test"}, "bgp"),
+            (
+                "configuration_change",
+                {"user": "test", "change_summary": "test"},
+                "config",
+            ),
+        ],
+    )
+    def test_methods_set_correct_subsystem(
+        self, generator, mock_event_bus, method, args, expected_subsystem
+    ):
         """Test that specialized methods set the correct subsystem"""
         # When
         method_func = getattr(generator, method)
@@ -372,12 +383,21 @@ class TestRouterSyslogGenerator:
         event = mock_event_bus.publish.call_args[0][0]
         assert event["attributes"]["subsystem"] == expected_subsystem
 
-    @pytest.mark.parametrize("method,args,expected_severity", [
-        ("prefix_limit_exceeded", {"peer_ip": "1.1.1.1", "limit": 100}, "error"),
-        ("bgp_session_reset", {"peer_ip": "2.2.2.2", "reason": "test"}, "warning"),
-        ("configuration_change", {"user": "test", "change_summary": "test"}, "notice"),
-    ])
-    def test_methods_set_correct_severity(self, generator, mock_event_bus, method, args, expected_severity):
+    @pytest.mark.parametrize(
+        "method,args,expected_severity",
+        [
+            ("prefix_limit_exceeded", {"peer_ip": "1.1.1.1", "limit": 100}, "error"),
+            ("bgp_session_reset", {"peer_ip": "2.2.2.2", "reason": "test"}, "warning"),
+            (
+                "configuration_change",
+                {"user": "test", "change_summary": "test"},
+                "notice",
+            ),
+        ],
+    )
+    def test_methods_set_correct_severity(
+        self, generator, mock_event_bus, method, args, expected_severity
+    ):
         """Test that specialized methods set the correct severity"""
         # When
         method_func = getattr(generator, method)

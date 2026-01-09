@@ -1,6 +1,7 @@
 """Unit tests for BGP noise feed using pytest."""
 
 import random
+
 import pytest
 
 from simulator.feeds.bgp.bgp_noise_feed import BGPNoiseFeed
@@ -21,12 +22,15 @@ class TestBGPNoiseFeedInit:
         assert feed.update_rate == 2.5
         assert feed.seed == 999
 
-    @pytest.mark.parametrize("rate,seed", [
-        (0.0, 1),
-        (1.0, 42),
-        (100.0, 123),
-        (0.001, 999),
-    ])
+    @pytest.mark.parametrize(
+        "rate,seed",
+        [
+            (0.0, 1),
+            (1.0, 42),
+            (100.0, 123),
+            (0.001, 999),
+        ],
+    )
     def test_various_parameters(self, rate, seed):
         """Test initialization with various parameter combinations."""
         feed = BGPNoiseFeed(update_rate=rate, seed=seed)
@@ -51,16 +55,18 @@ class TestGenerateEvents:
         """Test event count calculation."""
         # Different rates should produce different counts
         test_cases = [
-            (0.5, 10, 5),   # 10 * 0.5 = 5
-            (2.0, 5, 10),   # 5 * 2.0 = 10
+            (0.5, 10, 5),  # 10 * 0.5 = 5
+            (2.0, 5, 10),  # 5 * 2.0 = 10
             (0.0, 100, 0),  # 100 * 0.0 = 0
-            (3.5, 2, 7),    # 2 * 3.5 = 7
+            (3.5, 2, 7),  # 2 * 3.5 = 7
         ]
 
         for rate, duration, expected_count in test_cases:
             feed = BGPNoiseFeed(update_rate=rate, seed=42)
             events = feed.generate_events(duration)
-            assert len(events) == expected_count, f"Failed for rate={rate}, duration={duration}"
+            assert (
+                len(events) == expected_count
+            ), f"Failed for rate={rate}, duration={duration}"
 
     def test_events_sorted_by_timestamp(self, feed):
         """Test events are chronologically sorted."""
@@ -224,6 +230,7 @@ class TestIntegration:
         """Test BGPNoiseFeed is a proper BackgroundFeed subclass."""
         feed = BGPNoiseFeed()
         from simulator.engine.simulation_engine import BackgroundFeed
+
         assert isinstance(feed, BackgroundFeed)
 
     def test_generate_events_signature(self):

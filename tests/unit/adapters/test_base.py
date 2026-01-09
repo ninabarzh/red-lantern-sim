@@ -1,5 +1,6 @@
 """Unit tests for the base Adapter class."""
-from typing import Iterable
+
+from collections.abc import Iterable
 
 import pytest
 
@@ -17,7 +18,7 @@ class TestAdapterBaseClass:
     def test_transform_method_exists(self):
         """Test that the transform method exists on Adapter."""
         adapter = Adapter()
-        assert hasattr(adapter, 'transform')
+        assert hasattr(adapter, "transform")
         assert callable(adapter.transform)
 
     def test_transform_default_returns_empty_iterable(self):
@@ -26,7 +27,7 @@ class TestAdapterBaseClass:
         result = adapter.transform({"event_type": "test", "data": "value"})
 
         # Should return an empty iterable
-        assert hasattr(result, '__iter__')
+        assert hasattr(result, "__iter__")
         result_list = list(result)
         assert result_list == []
 
@@ -104,18 +105,21 @@ class TestAdapterBaseClass:
             "event_type": "complex",
             "timestamp": 1234567890,
             "attributes": {"nested": "data"},
-            "source": "test"
+            "source": "test",
         }
         result = adapter.transform(complex_event)
         assert list(result) == []
 
-    @pytest.mark.parametrize("event_input", [
-        {"simple": "event"},
-        {"nested": {"deep": "data"}},
-        {"list_data": [1, 2, 3]},
-        {"mixed": {"str": "value", "int": 42, "bool": True}},
-        {},  # Empty dict
-    ])
+    @pytest.mark.parametrize(
+        "event_input",
+        [
+            {"simple": "event"},
+            {"nested": {"deep": "data"}},
+            {"list_data": [1, 2, 3]},
+            {"mixed": {"str": "value", "int": 42, "bool": True}},
+            {},  # Empty dict
+        ],
+    )
     def test_transform_with_various_inputs(self, event_input):
         """Test transform with various event dictionary structures."""
         adapter = Adapter()
@@ -179,10 +183,10 @@ def test_adapter_type_annotations():
     hints = get_type_hints(Adapter.transform)
 
     # Return type should be Iterable[str]
-    assert hints.get('return') == Iterable[str]
+    assert hints.get("return") == Iterable[str]
 
     # Event parameter should be dict type
-    assert hints.get('event') == dict
+    assert hints.get("event") is dict
 
 
 def test_adapter_as_interface():
@@ -203,7 +207,7 @@ def test_adapter_as_interface():
 
     for adapter in adapters:
         result = adapter.transform({"test": "event"})
-        assert hasattr(result, '__iter__')
+        assert hasattr(result, "__iter__")
         lines = list(result)
         assert isinstance(lines, list)
         assert all(isinstance(line, str) for line in lines)

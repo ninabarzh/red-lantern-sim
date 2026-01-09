@@ -5,11 +5,17 @@ These tests expand on the existing test coverage to include edge cases,
 error handling, and additional functionality.
 """
 
+import os
+import sys
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from simulator.feeds.change_mgmt.mock_cmdb import MockCMDB
+from simulator.feeds.change_mgmt.mock_cmdb import (
+    MockCMDB,
+    generate_approved_bgp_change,
+    generate_roa_change_ticket,
+)
 
 
 @pytest.mark.unit
@@ -394,7 +400,6 @@ class TestMockCMDBExtended:
         active_at_end = cmdb.get_active_changes(end_time)
         assert len(active_at_end) >= 0  # Implementation dependent
 
-
     def test_ticket_attributes_preserved(self) -> None:
         """Test that all ticket attributes are preserved after creation."""
         cmdb = MockCMDB()
@@ -421,7 +426,6 @@ class TestMockCMDBExtended:
                 assert ticket[key] == value.isoformat()
             else:
                 assert ticket[key] == value
-
 
     def test_different_change_types(self) -> None:
         """Test creating tickets with various change types."""
@@ -544,22 +548,7 @@ class TestMockCMDBExtended:
 
 """Unit tests for MockCMDB using pytest and conftest fixtures."""
 
-import json
-from datetime import UTC, datetime, timedelta
-from unittest.mock import Mock
-import pytest
-
-# Import the module to test
-import sys
-import os
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
-from simulator.feeds.change_mgmt.mock_cmdb import (
-    MockCMDB,
-    generate_approved_bgp_change,
-    generate_roa_change_ticket
-)
 
 
 class TestMockCMDBInitialization:
@@ -593,7 +582,7 @@ class TestCreateChangeTicket:
             description="Test 1",
             requester="user1",
             start_time=datetime.now(UTC),
-            end_time=datetime.now(UTC) + timedelta(hours=1)
+            end_time=datetime.now(UTC) + timedelta(hours=1),
         )
 
         assert cmdb.change_counter == initial_counter + 1
@@ -604,7 +593,7 @@ class TestCreateChangeTicket:
             description="Test 2",
             requester="user2",
             start_time=datetime.now(UTC),
-            end_time=datetime.now(UTC) + timedelta(hours=1)
+            end_time=datetime.now(UTC) + timedelta(hours=1),
         )
 
         assert cmdb.change_counter == initial_counter + 2
@@ -624,7 +613,7 @@ class TestCreateChangeTicket:
             affected_prefixes=["192.0.2.0/24", "198.51.100.0/24"],
             affected_systems=["router-core-01", "router-core-02"],
             status="approved",
-            risk="medium"
+            risk="medium",
         )
 
         assert ticket_id in cmdb.changes
@@ -656,7 +645,7 @@ class TestCreateChangeTicket:
             description="Routine maintenance",
             requester="admin",
             start_time=now,
-            end_time=now + timedelta(hours=1)
+            end_time=now + timedelta(hours=1),
             # Not providing optional parameters
         )
 
@@ -685,7 +674,7 @@ class TestIsChangeAuthorised:
             affected_prefixes=["203.0.113.0/24", "198.51.100.0/24"],
             affected_systems=["router-01"],
             status="approved",
-            risk="medium"
+            risk="medium",
         )
 
         return cmdb
@@ -698,7 +687,7 @@ class TestIsChangeAuthorised:
             change_type="bgp_policy",
             timestamp=now,  # Within window
             prefix="203.0.113.0/24",
-            system="router-01"
+            system="router-01",
         )
 
         assert authorised is True
@@ -710,7 +699,7 @@ class TestIsChangeAuthorised:
         authorised = cmdb_with_ticket.is_change_authorised(
             change_type="roa_change",  # Different type
             timestamp=now,
-            prefix="203.0.113.0/24"
+            prefix="203.0.113.0/24",
         )
 
         assert authorised is False
@@ -721,20 +710,18 @@ class TestIsChangeAuthorised:
         now = datetime.now(UTC)
 
         # Create a draft ticket
-        draft_ticket_id = cmdb.create_change_ticket(
+        cmdb.create_change_ticket(
             change_type="bgp_policy",
             description="Draft change",
             requester="user",
             start_time=now - timedelta(hours=1),
             end_time=now + timedelta(hours=1),
             affected_prefixes=["192.0.2.0/24"],
-            status="draft"  # Not approved
+            status="draft",  # Not approved
         )
 
         authorised = cmdb.is_change_authorised(
-            change_type="bgp_policy",
-            timestamp=now,
-            prefix="192.0.2.0/24"
+            change_type="bgp_policy", timestamp=now, prefix="192.0.2.0/24"
         )
 
         assert authorised is False
@@ -747,7 +734,7 @@ class TestIsChangeAuthorised:
         authorised_before = cmdb_with_ticket.is_change_authorised(
             change_type="bgp_policy",
             timestamp=now - timedelta(hours=2),  # 2 hours before start
-            prefix="203.0.113.0/24"
+            prefix="203.0.113.0/24",
         )
         assert authorised_before is False
 
@@ -755,7 +742,7 @@ class TestIsChangeAuthorised:
         authorised_after = cmdb_with_ticket.is_change_authorised(
             change_type="bgp_policy",
             timestamp=now + timedelta(hours=2),  # 2 hours after end
-            prefix="203.0.113.0/24"
+            prefix="203.0.113.0/24",
         )
         assert authorised_after is False
 
@@ -766,7 +753,7 @@ class TestIsChangeAuthorised:
         authorised = cmdb_with_ticket.is_change_authorised(
             change_type="bgp_policy",
             timestamp=now,
-            prefix="10.0.0.0/8"  # Not in affected_prefixes
+            prefix="10.0.0.0/8",  # Not in affected_prefixes
         )
 
         assert authorised is False
@@ -778,7 +765,7 @@ class TestIsChangeAuthorised:
         authorised = cmdb_with_ticket.is_change_authorised(
             change_type="bgp_policy",
             timestamp=now,
-            system="router-99"  # Not in affected_systems
+            system="router-99",  # Not in affected_systems
         )
 
         assert authorised is False
@@ -789,7 +776,7 @@ class TestIsChangeAuthorised:
 
         authorised = cmdb_with_ticket.is_change_authorised(
             change_type="bgp_policy",
-            timestamp=now
+            timestamp=now,
             # No prefix or system specified
         )
 
@@ -814,7 +801,7 @@ class TestGenerateTelemetryEvent:
             affected_prefixes=["203.0.113.0/24"],
             affected_systems=["core-router"],
             status="approved",
-            risk="medium"
+            risk="medium",
         )
 
         return cmdb
@@ -839,9 +826,16 @@ class TestGenerateTelemetryEvent:
         # Check attributes structure
         attrs = event["attributes"]
         required_keys = [
-            "ticket_id", "change_type", "description", "requester",
-            "status", "risk", "start_time", "end_time",
-            "affected_prefixes", "affected_systems"
+            "ticket_id",
+            "change_type",
+            "description",
+            "requester",
+            "status",
+            "risk",
+            "start_time",
+            "end_time",
+            "affected_prefixes",
+            "affected_systems",
         ]
 
         for key in required_keys:
@@ -850,8 +844,7 @@ class TestGenerateTelemetryEvent:
     def test_generate_telemetry_event_with_scenario(self, cmdb_with_ticket):
         """Test lines 252-269: includes scenario name when provided."""
         event = cmdb_with_ticket.generate_telemetry_event(
-            self.ticket_id,
-            scenario_name="test_scenario_01"
+            self.ticket_id, scenario_name="test_scenario_01"
         )
 
         assert "scenario" in event
@@ -879,7 +872,7 @@ class TestConvenienceFunctions:
             prefix=prefix,
             start_offset_minutes=30,
             duration_minutes=120,
-            requester="network_ops_team"
+            requester="network_ops_team",
         )
 
         # Check event structure
@@ -901,7 +894,7 @@ class TestConvenienceFunctions:
             prefix=prefix,
             start_offset_minutes=15,
             duration_minutes=45,
-            requester="security_operations"
+            requester="security_operations",
         )
 
         # Check event structure
@@ -926,13 +919,13 @@ class TestGetActiveChanges:
         base_time = datetime.now(UTC)
 
         # Create tickets at different times
-        ticket1_id = cmdb.create_change_ticket(
+        cmdb.create_change_ticket(
             change_type="bgp_policy",
             description="Past change",
             requester="user1",
             start_time=base_time - timedelta(hours=3),
             end_time=base_time - timedelta(hours=2),  # Ended 2 hours ago
-            status="approved"
+            status="approved",
         )
 
         ticket2_id = cmdb.create_change_ticket(
@@ -941,16 +934,16 @@ class TestGetActiveChanges:
             requester="user2",
             start_time=base_time - timedelta(hours=1),  # Started 1 hour ago
             end_time=base_time + timedelta(hours=1),  # Ends in 1 hour
-            status="approved"
+            status="approved",
         )
 
-        ticket3_id = cmdb.create_change_ticket(
+        cmdb.create_change_ticket(
             change_type="roa_change",
             description="Future change",
             requester="user3",
             start_time=base_time + timedelta(hours=1),  # Starts in 1 hour
             end_time=base_time + timedelta(hours=2),
-            status="approved"
+            status="approved",
         )
 
         # Get active changes at current time

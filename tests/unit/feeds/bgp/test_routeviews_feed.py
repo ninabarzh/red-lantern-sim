@@ -590,7 +590,6 @@ class TestEdgeCasesAndIntegration:
         assert telemetry["attributes"]["med"] == 50
         assert telemetry["attributes"]["atomic_aggregate"] is True
 
-
     def test_different_prefix_lengths(self):
         """Test table dump generation with various prefix lengths."""
         feed = RouteViewsFeedMock()

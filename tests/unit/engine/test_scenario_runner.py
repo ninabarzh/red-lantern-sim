@@ -1,6 +1,7 @@
 """
 Unit tests for simulator/engine/scenario_runner.py
 """
+
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, call, patch
@@ -30,7 +31,7 @@ class TestScenarioRunner:
 
     def test_load_valid_scenario(self):
         """Test loading a valid scenario YAML file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "test-scenario"
             timeline:
@@ -69,7 +70,7 @@ class TestScenarioRunner:
 
     def test_load_invalid_yaml(self):
         """Test loading invalid YAML content."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write("invalid: yaml: [content")
             temp_path = Path(f.name)
 
@@ -84,7 +85,7 @@ class TestScenarioRunner:
 
     def test_load_scenario_not_dict(self):
         """Test loading a scenario that's not a dictionary."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write("- item1\n- item2\n- item3")
             temp_path = Path(f.name)
 
@@ -101,7 +102,7 @@ class TestScenarioRunner:
 
     def test_load_missing_timeline(self):
         """Test loading a scenario without a timeline section."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "no-timeline"
             description: "This scenario has no timeline"
@@ -122,7 +123,7 @@ class TestScenarioRunner:
 
     def test_load_timeline_not_list(self):
         """Test loading a scenario where timeline is not a list."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "bad-timeline"
             timeline:
@@ -145,7 +146,7 @@ class TestScenarioRunner:
 
     def test_run_empty_timeline(self):
         """Test running a scenario with an empty timeline."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "empty-timeline"
             timeline: []
@@ -170,7 +171,7 @@ class TestScenarioRunner:
 
     def test_run_sorted_timeline(self):
         """Test that timeline events are sorted by time."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "unsorted-timeline"
             timeline:
@@ -191,6 +192,7 @@ class TestScenarioRunner:
 
             # Track calls to publish
             published_events = []
+
             def capture_event(event):
                 published_events.append(event)
 
@@ -214,7 +216,7 @@ class TestScenarioRunner:
 
     def test_run_events_without_time(self):
         """Test running events that don't have an explicit 't' field."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "no-time-events"
             timeline:
@@ -232,6 +234,7 @@ class TestScenarioRunner:
             runner.load()
 
             published_events = []
+
             def capture_event(event):
                 published_events.append(event)
 
@@ -243,7 +246,9 @@ class TestScenarioRunner:
             assert len(published_events) == 3
             assert published_events[0]["entry"]["type"] == "event1"
             assert published_events[0]["timestamp"] == 0
-            assert published_events[1]["entry"]["type"] == "event3"  # Second event without 't'
+            assert (
+                published_events[1]["entry"]["type"] == "event3"
+            )  # Second event without 't'
             assert published_events[1]["timestamp"] == 0
             assert published_events[2]["entry"]["type"] == "event2"
             assert published_events[2]["timestamp"] == 5
@@ -252,7 +257,7 @@ class TestScenarioRunner:
 
     def test_run_close_bus_true(self):
         """Test running with close_bus=True."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "close-bus-test"
             timeline:
@@ -275,7 +280,7 @@ class TestScenarioRunner:
 
     def test_run_close_bus_false(self):
         """Test running with close_bus=False (default)."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "dont-close-bus-test"
             timeline:
@@ -299,7 +304,7 @@ class TestScenarioRunner:
 
     def test_run_event_structure(self):
         """Test that published events have the correct structure."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "event-structure-test"
             timeline:
@@ -317,6 +322,7 @@ class TestScenarioRunner:
             runner.load()
 
             published_events = []
+
             def capture_event(event):
                 published_events.append(event)
 
@@ -340,7 +346,7 @@ class TestScenarioRunner:
 
     def test_reset(self):
         """Test resetting the scenario runner."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "reset-test"
             timeline:
@@ -380,10 +386,10 @@ class TestScenarioRunner:
         mock_bus.close.assert_not_called()
         # No method to "clear" subscribers, but if there were, it shouldn't be called
 
-    @patch('simulator.engine.scenario_runner.SimulationClock')
+    @patch("simulator.engine.scenario_runner.SimulationClock")
     def test_clock_advance_to_called(self, mock_clock_class):
         """Test that clock.advance_to is called with correct times."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "clock-test"
             timeline:
@@ -415,10 +421,10 @@ class TestScenarioRunner:
         finally:
             temp_path.unlink()
 
-    @patch('simulator.engine.scenario_runner.SimulationClock')
+    @patch("simulator.engine.scenario_runner.SimulationClock")
     def test_clock_now_called_for_timestamp(self, mock_clock_class):
         """Test that clock.now() is called for each event timestamp."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "clock-now-test"
             timeline:
@@ -452,7 +458,7 @@ class TestScenarioRunnerIntegration:
 
     def test_end_to_end_with_real_clock_and_bus(self):
         """Test a complete scenario run with real Clock and EventBus."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             scenario_content = """
             id: "integration-test"
             timeline:
@@ -469,9 +475,11 @@ class TestScenarioRunnerIntegration:
         try:
             # Use real EventBus to test integration
             from simulator.engine.event_bus import EventBus as RealEventBus
+
             event_bus = RealEventBus()
 
             received_events = []
+
             def event_handler(event):
                 received_events.append(event)
 
@@ -500,14 +508,16 @@ def test_scenario_runner_module_imports():
     """Test that the module exports the expected names."""
     import simulator.engine.scenario_runner as scenario_runner_module
 
-    assert hasattr(scenario_runner_module, 'ScenarioRunner')
+    assert hasattr(scenario_runner_module, "ScenarioRunner")
     assert isinstance(scenario_runner_module.ScenarioRunner, type)
 
 
 # Test file encoding handling
 def test_load_with_utf8_encoding():
     """Test loading a scenario file with UTF-8 encoding."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False, encoding='utf-8') as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yaml", delete=False, encoding="utf-8"
+    ) as f:
         # Include some UTF-8 characters
         scenario_content = """
         id: "utf8-test"
@@ -536,7 +546,7 @@ def test_load_with_utf8_encoding():
 def test_advance_to_same_time_multiple_times():
     """Test that advance_to() is called even for events at same time."""
     # This test verifies the actual behavior observed in the failure
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         scenario_content = """
         id: "same-time-test"
         timeline:
@@ -561,7 +571,7 @@ def test_advance_to_same_time_multiple_times():
             advance_calls.append(target_time)
             return original_advance_to(self, target_time)
 
-        with patch.object(SimulationClock, 'advance_to', track_advance_to):
+        with patch.object(SimulationClock, "advance_to", track_advance_to):
             runner = ScenarioRunner(temp_path, mock_bus)
             runner.load()
             runner.run()

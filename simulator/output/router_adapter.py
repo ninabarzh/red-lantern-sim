@@ -1,15 +1,24 @@
 # simulator/output/router_adapter.py
 from __future__ import annotations
-from datetime import datetime, timezone
-from typing import Iterable
+
+from collections.abc import Iterable
+from datetime import UTC, datetime, timezone
+
 from .base import Adapter
+
 
 class RouterAdapter(Adapter):
     """Transform router.syslog events into syslog-like lines."""
 
     SEVERITY_MAP = {
-        "emergency": 0, "alert": 1, "critical": 2, "error": 3,
-        "warning": 4, "notice": 5, "info": 6, "debug": 7
+        "emergency": 0,
+        "alert": 1,
+        "critical": 2,
+        "error": 3,
+        "warning": 4,
+        "notice": 5,
+        "info": 6,
+        "debug": 7,
     }
 
     FACILITY = 1
@@ -21,7 +30,7 @@ class RouterAdapter(Adapter):
             return lines
 
         ts = event.get("timestamp", 0)
-        dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+        dt = datetime.fromtimestamp(ts, tz=UTC)
         ts_str = dt.strftime("%b %d %H:%M:%S")
 
         attr = event.get("attributes", {})

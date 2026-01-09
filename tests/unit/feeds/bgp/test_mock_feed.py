@@ -1,6 +1,7 @@
 """
 Unit tests for simulator/feeds/bgp/mock_feed.py
 """
+
 import pytest
 
 from simulator.feeds.bgp.mock_feed import MockBGPFeed
@@ -19,9 +20,7 @@ class TestMockBGPFeed:
         feed = MockBGPFeed()
 
         feed.add_route(
-            prefix="192.0.2.0/24",
-            origin_as=65530,
-            as_path=[65530, 65531, 65532]
+            prefix="192.0.2.0/24", origin_as=65530, as_path=[65530, 65531, 65532]
         )
 
         assert "192.0.2.0/24" in feed._routes
@@ -38,7 +37,7 @@ class TestMockBGPFeed:
             prefix="203.0.113.0/24",
             origin_as=64512,
             as_path=[64512],
-            collectors=["routeviews", "ris", "custom_collector"]
+            collectors=["routeviews", "ris", "custom_collector"],
         )
 
         route = feed._routes["203.0.113.0/24"]
@@ -54,7 +53,7 @@ class TestMockBGPFeed:
             prefix="198.51.100.0/24",
             origin_as=64496,
             as_path=[64496, 64497],
-            collectors=None
+            collectors=None,
         )
 
         route = feed._routes["198.51.100.0/24"]
@@ -65,18 +64,14 @@ class TestMockBGPFeed:
         feed = MockBGPFeed()
 
         # Add first route
-        feed.add_route(
-            prefix="192.0.2.0/24",
-            origin_as=65530,
-            as_path=[65530, 65531]
-        )
+        feed.add_route(prefix="192.0.2.0/24", origin_as=65530, as_path=[65530, 65531])
 
         # Overwrite with new route
         feed.add_route(
             prefix="192.0.2.0/24",
             origin_as=65540,
             as_path=[65540],
-            collectors=["custom"]
+            collectors=["custom"],
         )
 
         route = feed._routes["192.0.2.0/24"]
@@ -87,11 +82,7 @@ class TestMockBGPFeed:
     def test_expected_origin_existing_prefix(self):
         """Test expected_origin for existing prefix."""
         feed = MockBGPFeed()
-        feed.add_route(
-            prefix="192.0.2.0/24",
-            origin_as=65530,
-            as_path=[65530, 65531]
-        )
+        feed.add_route(prefix="192.0.2.0/24", origin_as=65530, as_path=[65530, 65531])
 
         result = feed.expected_origin("192.0.2.0/24")
         assert result == 65530
@@ -107,11 +98,7 @@ class TestMockBGPFeed:
         """Test expected_as_path for existing prefix."""
         feed = MockBGPFeed()
         expected_path = [65530, 65531, 65532]
-        feed.add_route(
-            prefix="192.0.2.0/24",
-            origin_as=65530,
-            as_path=expected_path
-        )
+        feed.add_route(prefix="192.0.2.0/24", origin_as=65530, as_path=expected_path)
 
         result = feed.expected_as_path("192.0.2.0/24")
         assert result == expected_path
@@ -130,7 +117,7 @@ class TestMockBGPFeed:
             prefix="192.0.2.0/24",
             origin_as=65530,
             as_path=[65530],
-            collectors=["routeviews", "ris", "collector3", "collector4"]
+            collectors=["routeviews", "ris", "collector3", "collector4"],
         )
 
         result = feed.visibility("192.0.2.0/24")
@@ -142,7 +129,7 @@ class TestMockBGPFeed:
         feed.add_route(
             prefix="192.0.2.0/24",
             origin_as=65530,
-            as_path=[65530]  # Default collectors will be used
+            as_path=[65530],  # Default collectors will be used
         )
 
         result = feed.visibility("192.0.2.0/24")
@@ -158,22 +145,14 @@ class TestMockBGPFeed:
     def test_is_known_prefix_existing(self):
         """Test is_known_prefix for existing prefix."""
         feed = MockBGPFeed()
-        feed.add_route(
-            prefix="192.0.2.0/24",
-            origin_as=65530,
-            as_path=[65530]
-        )
+        feed.add_route(prefix="192.0.2.0/24", origin_as=65530, as_path=[65530])
 
         assert feed.is_known_prefix("192.0.2.0/24") is True
 
     def test_is_known_prefix_nonexistent(self):
         """Test is_known_prefix for non-existent prefix."""
         feed = MockBGPFeed()
-        feed.add_route(
-            prefix="192.0.2.0/24",
-            origin_as=65530,
-            as_path=[65530]
-        )
+        feed.add_route(prefix="192.0.2.0/24", origin_as=65530, as_path=[65530])
 
         assert feed.is_known_prefix("10.0.0.0/8") is False
 
@@ -186,7 +165,7 @@ class TestMockBGPFeed:
             prefix="192.0.2.0/24",
             origin_as=65530,
             as_path=[65530, 65531],
-            collectors=["routeviews"]
+            collectors=["routeviews"],
         )
 
         # Add second route
@@ -194,7 +173,7 @@ class TestMockBGPFeed:
             prefix="203.0.113.0/24",
             origin_as=64512,
             as_path=[64512, 64513, 64514],
-            collectors=["routeviews", "ris"]
+            collectors=["routeviews", "ris"],
         )
 
         # Verify first route unchanged
@@ -214,9 +193,7 @@ class TestMockBGPFeed:
         feed = MockBGPFeed()
 
         feed.add_route(
-            prefix="192.0.2.0/24",
-            origin_as=65530,
-            as_path=[]  # Empty AS path
+            prefix="192.0.2.0/24", origin_as=65530, as_path=[]  # Empty AS path
         )
 
         result = feed.expected_as_path("192.0.2.0/24")
@@ -230,7 +207,7 @@ class TestMockBGPFeed:
             prefix="192.0.2.0/24",
             origin_as=65530,
             as_path=[65530],
-            collectors=["single_collector"]
+            collectors=["single_collector"],
         )
 
         result = feed.visibility("192.0.2.0/24")
@@ -244,7 +221,7 @@ class TestMockBGPFeed:
             prefix="192.0.2.0/24",
             origin_as=65530,
             as_path=[65530],
-            collectors=[]  # Empty list
+            collectors=[],  # Empty list
         )
 
         result = feed.visibility("192.0.2.0/24")
@@ -269,12 +246,16 @@ class TestMockBGPFeed:
         sig = inspect.signature(feed.expected_origin)
         annotation_str = str(sig.return_annotation)
         # Should be "int | None" or similar
-        assert "int" in annotation_str and ("None" in annotation_str or "Optional" in annotation_str)
+        assert "int" in annotation_str and (
+            "None" in annotation_str or "Optional" in annotation_str
+        )
 
         sig = inspect.signature(feed.expected_as_path)
         annotation_str = str(sig.return_annotation)
         # Should be "list[int] | None" or similar
-        assert "list" in annotation_str and ("None" in annotation_str or "Optional" in annotation_str)
+        assert "list" in annotation_str and (
+            "None" in annotation_str or "Optional" in annotation_str
+        )
 
         sig = inspect.signature(feed.visibility)
         # visibility returns int
@@ -289,7 +270,7 @@ def test_module_imports():
     """Test that the module exports the expected names."""
     import simulator.feeds.bgp.mock_feed as mock_feed_module
 
-    assert hasattr(mock_feed_module, 'MockBGPFeed')
+    assert hasattr(mock_feed_module, "MockBGPFeed")
     assert isinstance(mock_feed_module.MockBGPFeed, type)
 
 
@@ -298,28 +279,16 @@ def test_edge_case_prefixes():
     feed = MockBGPFeed()
 
     # Test IPv6 prefix
-    feed.add_route(
-        prefix="2001:db8::/32",
-        origin_as=65530,
-        as_path=[65530]
-    )
+    feed.add_route(prefix="2001:db8::/32", origin_as=65530, as_path=[65530])
     assert feed.is_known_prefix("2001:db8::/32") is True
     assert feed.expected_origin("2001:db8::/32") == 65530
 
     # Test small prefix
-    feed.add_route(
-        prefix="0.0.0.0/0",
-        origin_as=0,
-        as_path=[0]
-    )
+    feed.add_route(prefix="0.0.0.0/0", origin_as=0, as_path=[0])
     assert feed.is_known_prefix("0.0.0.0/0") is True
 
     # Test large prefix
-    feed.add_route(
-        prefix="255.255.255.255/32",
-        origin_as=65535,
-        as_path=[65535]
-    )
+    feed.add_route(prefix="255.255.255.255/32", origin_as=65535, as_path=[65535])
     assert feed.is_known_prefix("255.255.255.255/32") is True
 
 
@@ -331,7 +300,7 @@ def test_negative_as_numbers():
     feed.add_route(
         prefix="192.0.2.0/24",
         origin_as=-1,  # Unusual but valid for testing
-        as_path=[-1, 65530]
+        as_path=[-1, 65530],
     )
 
     assert feed.expected_origin("192.0.2.0/24") == -1

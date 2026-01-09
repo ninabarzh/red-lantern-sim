@@ -57,10 +57,7 @@ def run_with_background(
     """
     # Determine simulation duration from scenario
     scenario_timeline = scenario_runner.scenario.get("timeline", [])
-    duration = max(
-        (entry.get("t", 0) for entry in scenario_timeline),
-        default=3600
-    )
+    duration = max((entry.get("t", 0) for entry in scenario_timeline), default=3600)
 
     # Collect scenario events
     all_events: list[tuple[int, dict[str, Any]]] = []
@@ -86,9 +83,6 @@ def run_with_background(
         clock.advance_to(timestamp)
 
         # Add timestamp to event
-        event = {
-            "timestamp": clock.now(),
-            **event_data
-        }
+        event = {"timestamp": clock.now(), **event_data}
 
         event_bus.publish(event)

@@ -1,6 +1,7 @@
 """
 Unit tests for simulator/engine/clock.py
 """
+
 import pytest
 
 from simulator.engine.clock import SimulationClock
@@ -135,11 +136,12 @@ class TestSimulationClock:
         assert sig.return_annotation is int, "now() should return int"
 
         sig = inspect.signature(SimulationClock.advance_to)
-        param = sig.parameters['target_time']
+        param = sig.parameters["target_time"]
         # Type annotation might be displayed differently
         annotation = str(param.annotation)
-        assert 'int' in annotation and 'float' in annotation, \
-            "advance_to should accept int|float"
+        assert (
+            "int" in annotation and "float" in annotation
+        ), "advance_to should accept int|float"
 
 
 # Additional edge case tests
@@ -163,9 +165,9 @@ def test_clock_interface_stability():
     clock = SimulationClock()
 
     # Test that expected methods exist
-    assert hasattr(clock, 'now')
-    assert hasattr(clock, 'advance_to')
-    assert hasattr(clock, 'reset')
+    assert hasattr(clock, "now")
+    assert hasattr(clock, "advance_to")
+    assert hasattr(clock, "reset")
 
     # Test they are callable
     assert callable(clock.now)

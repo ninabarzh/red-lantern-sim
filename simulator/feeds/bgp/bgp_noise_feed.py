@@ -60,7 +60,7 @@ class BGPNoiseFeed(BackgroundFeed):
                     "origin_as": rng.randint(1000, 65000),
                     "as_path": self._random_as_path(rng),
                     "next_hop": f"192.0.2.{rng.randint(1, 254)}",
-                }
+                },
             }
 
             events.append((timestamp, event_data))

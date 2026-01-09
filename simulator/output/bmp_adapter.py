@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import Any, Iterable
+
+from collections.abc import Iterable
+from typing import Any
+
 from .base import Adapter
 
 
@@ -30,9 +33,11 @@ class BMPAdapter(Adapter):
 
         elif event_type == "bgp.withdrawal_complete":
             # Minimal placeholder for demonstration
-            lines.append(f"<13>Jan 01 01:32:10 edge-router-01 BGP withdrawal complete")
+            lines.append("<13>Jan 01 01:32:10 edge-router-01 BGP withdrawal complete")
 
         elif event_type == "bgp.reconvergence":
-            lines.append(f"<14>Jan 01 01:35:00 edge-router-01 BGP reconvergence completed")
+            lines.append(
+                "<14>Jan 01 01:35:00 edge-router-01 BGP reconvergence completed"
+            )
 
         return lines

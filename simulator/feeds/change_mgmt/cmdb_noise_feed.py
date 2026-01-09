@@ -52,12 +52,14 @@ class CMDBNoiseFeed(BackgroundFeed):
             # Random timestamp within duration
             timestamp = rng.randint(0, duration)
 
-            change_type = rng.choice([
-                "software_update",
-                "config_change",
-                "maintenance",
-                "system_restart",
-            ])
+            change_type = rng.choice(
+                [
+                    "software_update",
+                    "config_change",
+                    "maintenance",
+                    "system_restart",
+                ]
+            )
 
             # Generate files changed
             num_files = rng.randint(1, 5)
@@ -74,7 +76,7 @@ class CMDBNoiseFeed(BackgroundFeed):
                     "actor": rng.choice(["alice", "bob", "charlie", "automation"]),
                     "files_changed": files_changed,
                     "change_type": change_type,
-                }
+                },
             }
 
             events.append((timestamp, event_data))
