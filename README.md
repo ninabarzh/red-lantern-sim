@@ -3,7 +3,7 @@
 ![Version](https://img.shields.io/badge/status-active%20development-orange)
 ![Python](https://img.shields.io/badge/python-3.12+-blue)
 ![License](https://img.shields.io/badge/license-CC0-lightgrey)
-![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)
+[![codecov](https://codecov.io/github/ninabarzh/red-lantern-sim/graph/badge.svg?token=P9ROXVIVKZ)](https://codecov.io/github/ninabarzh/red-lantern-sim)
 
 Red Lantern Simulator is a deterministic attack-telemetry generator for network and routing security scenarios.
 
