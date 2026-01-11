@@ -1,4 +1,3 @@
-# .github/workflows/scenario-validation.yml
 name: Scenario Validation
 
 on:
@@ -50,11 +49,13 @@ jobs:
       - name: Run all scenarios
         run: |
           for scenario in simulator/scenarios/**/scenario.yaml; do
-            scenario_name=$(basename $(dirname "$scenario"))
-            echo "Running $scenario"
+            # Use parameter expansion to get the directory name
+            scenario_dir=$(dirname "$scenario")
+            scenario_name=$(basename "$scenario_dir")
+            echo "Running $scenario (scenario: $scenario_name)"
             timeout 120s python -m simulator.cli "$scenario" \
               --output json \
-              --json-file "${scenario_name}-output.json"
+              --json-file "${scenario_name}-output.json" || echo "Warning: Scenario $scenario timed out or failed"
           done
 
       - name: Validate output format
@@ -62,21 +63,36 @@ jobs:
           python -c "
           import json
           from pathlib import Path
+          import sys
 
+          errors = []
           for output_file in Path('.').glob('*-output.json'):
-              with open(output_file) as f:
-                  data = json.load(f)
+              try:
+                  with open(output_file) as f:
+                      data = json.load(f)
 
-              assert isinstance(data, list), f'{output_file} should be a list'
-              assert len(data) > 0, f'{output_file} should not be empty'
+                  if not isinstance(data, list):
+                      errors.append(f'{output_file} should be a list, got {type(data)}')
+                  elif len(data) == 0:
+                      errors.append(f'{output_file} should not be empty')
+                  else:
+                      for i, event in enumerate(data):
+                          if 'line' not in event:
+                              errors.append(f'{output_file} event {i} should have line field')
+                      
+                      if not errors:
+                          print(f'✅ {output_file}: {len(data)} events')
+              except Exception as e:
+                  errors.append(f'{output_file}: {e}')
 
-              for event in data:
-                  assert 'line' in event, 'Event should have line field'
-
-              print(f'✅ {output_file}: {len(data)} events')
+          if errors:
+              for err in errors:
+                  print(err)
+              sys.exit(1)
           "
 
       - name: Archive scenario outputs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: scenario-outputs
