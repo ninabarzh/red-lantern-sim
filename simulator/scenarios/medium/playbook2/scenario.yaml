@@ -1,21 +1,13 @@
 id: playbook2_roa_expansion
-name: "Playbook 2: ROA Scope Expansion and Validation Mapping"
+name: "Playbook 2: ROA scope expansion and validation mapping"
 description: |
-  Control-plane attack escalation: Create fraudulent ROA for victim's prefix,
-  map global RPKI validation deployment, establish monitoring. This is phase 2
-  of a 3-part chain that poisons RPKI validation infrastructure.
-  
-  Timeline simulates:
-  - Action 2.1: Create fraudulent ROA covering target prefix
-  - Action 2.2: Map global validation deployment  
-  - Action 2.3: Establish monitoring for ROA changes
-  
-  Key insight: This is the pivot from legitimate participant to attacker.
-  We create ROAs for address space we don't control, exploiting compromised
-  RIR credentials and validation gaps.
+  Control-plane attack escalation: create a fraudulent ROA for a victim prefix,
+  observe global RPKI validation behaviour, and establish monitoring.
+
+  This is phase 2 of a 3-part chain targeting RPKI-dependent routing decisions.
 
 timeline:
-  # === PHASE 1 RECAP: Baseline established ===
+  # === PHASE 1 RECAP ===
   - t: 0
     action: phase1_complete
     our_prefix: "198.51.100.0/24"
@@ -24,9 +16,9 @@ timeline:
     target_as: 65003
     target_roa_status: "not_found"
     attack_step: "baseline"
-    note: "Phase 1 complete: Legitimate RPKI presence established, 7-day waiting period passed"
+    note: "Legitimate RPKI presence established earlier; waiting period elapsed"
 
-  # === ACTION 2.1: Create Fraudulent ROA for Target Prefix ===
+  # === ACTION 2.1: Fraudulent ROA creation ===
 
   - t: 60
     action: credential_use
@@ -34,187 +26,154 @@ timeline:
     source_ip: "185.220.101.45"
     system: "rir_portal"
     attack_step: "credential_compromise"
-    note: "Using compromised RIR account credentials (social engineering prerequisite)"
+    note: "Use of compromised maintainer credentials; appears as legitimate operator activity"
 
   - t: 120
-    action: fraudulent_roa_request
+    action: roa_creation
     prefix: "203.0.113.0/24"
     origin_as: 64513
     max_length: 25
     registry: "ARIN"
     actor: "admin@victim-network.net"
-    cover_story: "Bulk ROA update, copy-paste error in spreadsheet"
     attack_step: "roa_poisoning"
-    note: "CRITICAL: Creating ROA for address space we don't control"
+    note: "ROA created under compromised account authority"
 
-  - t: 180
-    action: rir_validation_check
-    prefix: "203.0.113.0/24"
-    requesting_as: 64513
-    validation_result: "approved"
-    registry: "ARIN"
-    attack_step: "roa_poisoning"
-    note: "RIR automated validation accepts request (validation gap exploited)"
+  # Automated approval is not a separate step in reality; acting as maintainer implies consent
+  # - action: rir_validation_check
+  #   validation_result: "approved"
 
-  - t: 240
-    action: fraudulent_roa_accepted
-    prefix: "203.0.113.0/24"
-    origin_as: 64513
-    max_length: 25
-    registry: "ARIN"
-    attack_step: "roa_poisoning"
-    note: "RIR accepts fraudulent ROA - attack succeeding"
+  # === ROA publication and propagation ===
 
-  # === ROA Publication (realistic 30-60 minute lag) ===
   - t: 2400
-    action: fraudulent_roa_published
+    action: roa_published
     prefix: "203.0.113.0/24"
     origin_as: 64513
     max_length: 25
     trust_anchor: "arin"
-    repository_url: "rsync://rpki.arin.net/repository/"
     attack_step: "roa_poisoning"
-    note: "Fraudulent ROA appears in ARIN repository (40-minute publication cycle)"
+    note: "ROA published to ARIN repository and becomes fetchable by validators"
 
   - t: 2700
     action: validator_sync
-    prefix: "203.0.113.0/24"
     validator: "routinator"
-    rpki_state: "valid"
+    prefix: "203.0.113.0/24"
     origin_as: 64513
+    rpki_state: "valid"
     attack_step: "roa_poisoning"
-    note: "Routinator sees fraudulent ROA - now shows AS64513 as valid origin"
+    note: "Validator now considers AS64513 a valid origin for the prefix"
 
   - t: 2760
     action: validator_sync
-    prefix: "203.0.113.0/24"
     validator: "cloudflare"
-    rpki_state: "valid"
+    prefix: "203.0.113.0/24"
     origin_as: 64513
+    rpki_state: "valid"
     attack_step: "roa_poisoning"
-    note: "Cloudflare validator also sees fraudulent ROA"
 
   - t: 2820
     action: validator_sync
-    prefix: "203.0.113.0/24"
     validator: "ripe"
-    rpki_state: "valid"
-    origin_as: 64513
-    attack_step: "roa_poisoning"
-    note: "RIPE validator confirms - fraudulent ROA globally visible"
-
-  # === Conflicting ROAs Detection ===
-  - t: 2880
-    action: conflicting_roas_detected
     prefix: "203.0.113.0/24"
-    roa_count: 2
-    origins: [65003, 64513]
+    origin_as: 64513
+    rpki_state: "valid"
     attack_step: "roa_poisoning"
-    note: "Multiple conflicting ROAs exist - validators accept both as valid"
 
-  # === ACTION 2.2: Map Global Validation Deployment ===
+  # === Coexisting ROAs (not validator confusion) ===
+
+  - t: 2880
+    action: roa_set_state
+    prefix: "203.0.113.0/24"
+    origins_present: [65003, 64513]
+    attack_step: "roa_poisoning"
+    note: "Multiple ROAs exist; announcements will be evaluated per-origin"
+
+  # === ACTION 2.2: Validation behaviour mapping ===
 
   - t: 3000
-    action: validation_test_start
-    test_type: "invalid_announcement"
+    action: observation_start
+    focus: "rpki_enforcement"
     attack_step: "validation_mapping"
-    note: "Begin testing which regions enforce RPKI validation"
+    note: "Begin observing routing outcomes for deliberately invalid announcements"
 
   - t: 3060
     action: test_announcement
     prefix: "198.51.100.0/24"
     origin_as: 64514
     region: "AMER"
-    expected_rpki_state: "invalid"
-    peer_response: "rejected"
+    observed_result: "filtered_by_some_peers"
     attack_step: "validation_mapping"
-    note: "Test AMER: Announce from wrong AS - peer rejects (60% validation enforcement)"
 
   - t: 3120
     action: test_announcement
     prefix: "198.51.100.0/24"
     origin_as: 64514
     region: "EMEA"
-    expected_rpki_state: "invalid"
-    peer_response: "accepted"
+    observed_result: "widely_propagated"
     attack_step: "validation_mapping"
-    note: "Test EMEA: Announce from wrong AS - peer accepts (20% validation enforcement)"
 
   - t: 3180
     action: test_announcement
     prefix: "198.51.100.0/24"
     origin_as: 64514
     region: "APAC"
-    expected_rpki_state: "invalid"
-    peer_response: "mixed"
+    observed_result: "inconsistent"
     attack_step: "validation_mapping"
-    note: "Test APAC: Mixed response (40% validation enforcement)"
 
   - t: 3240
-    action: validation_withdrawal
+    action: test_withdrawal
     prefix: "198.51.100.0/24"
     origin_as: 64514
     attack_step: "validation_mapping"
-    note: "Withdraw test announcement - testing complete"
 
   - t: 3300
     action: validation_map_complete
-    regions:
-      AMER: 60
-      EMEA: 20
-      APAC: 40
+    qualitative_results:
+      AMER: "partial enforcement observed"
+      EMEA: "low enforcement observed"
+      APAC: "mixed enforcement observed"
     target_region: "EMEA"
     attack_step: "validation_mapping"
-    note: "Validation deployment mapped - EMEA has lowest enforcement (optimal target)"
+    note: "Region selection based on observed acceptance patterns"
 
-  # === Verify Fraudulent ROA Visibility ===
-  - t: 3360
-    action: roa_visibility_check
-    prefix: "203.0.113.0/24"
-    origin_as: 64513
-    validators_checked: ["routinator", "cloudflare", "ripe", "fort"]
-    visible_count: 4
-    attack_step: "validation_mapping"
-    note: "Fraudulent ROA visible in all major validators - poisoning successful"
-
-  # === ACTION 2.3: Establish ROA Monitoring ===
+  # === ACTION 2.3: Monitoring ===
 
   - t: 3420
     action: monitoring_deployed
     target_prefix: "203.0.113.0/24"
     check_interval: 300
-    alert_on: ["roa_removal", "new_roas", "validation_changes"]
+    alerts:
+      - roa_removed
+      - roa_added
+      - validation_state_change
     attack_step: "monitoring"
-    note: "Continuous monitoring deployed - early warning system active"
 
   - t: 3480
     action: monitoring_baseline
     prefix: "203.0.113.0/24"
     roa_count: 2
     our_roa_present: true
-    victim_roa_count: 1
     attack_step: "monitoring"
-    note: "Baseline established - will alert if ROA status changes"
 
-  # === 48-Hour Stability Wait (compressed to 10 minutes) ===
+  # === Stability wait ===
+
   - t: 4080
     action: stability_check
     prefix: "203.0.113.0/24"
-    hours_stable: 48
-    our_roa_present: true
-    no_alerts: true
+    observation_window_hours: 48
+    changes_detected: false
     attack_step: "stability_wait"
-    note: "48-hour stability period - fraudulent ROA not being monitored by victim"
+    note: "No defensive response observed during monitoring window"
 
   # === PHASE 2 COMPLETE ===
+
   - t: 4200
     action: phase2_complete
-    fraudulent_roa_status: "published_and_stable"
-    validation_map: "complete"
+    roa_status: "stable"
+    validation_mapping: "complete"
     monitoring_status: "active"
     target_region: "EMEA"
     attack_step: "completion"
-    note: "Phase 2 success: Fraudulent ROA stable, validation mapped, monitoring active. Ready for Phase 3 (hijack execution)"
+    note: "Preconditions met for Phase 3 execution"
 
   - t: 7200
     type: end_marker

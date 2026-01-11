@@ -44,8 +44,10 @@ def mock_adapter(monkeypatch):
 def mock_clock() -> Mock:
     """Mock simulation clock."""
     clock = Mock()
-    clock.current_time.return_value = 1700000000
-    clock.now.return_value = datetime.now(UTC)  # Timezone-aware
+    # January 1, 2026 00:00:00 UTC
+    jan_1_2026 = 1767225600.0
+    clock.current_time.return_value = jan_1_2026
+    clock.now.return_value = jan_1_2026
     return clock
 
 

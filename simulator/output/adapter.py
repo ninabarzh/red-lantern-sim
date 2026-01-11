@@ -40,7 +40,14 @@ class ScenarioAdapter:
         }
 
     def transform(self, event: dict) -> list[str]:
-        adapter = self.adapters.get(event.get("event_type"))
+        event_type = event.get("event_type")
+
+        # Handle training.note events - they already have formatted lines
+        if event_type == "training.note":
+            line = event.get("line")
+            return [line] if line else []
+
+        adapter = self.adapters.get(event_type)
         if adapter:
             return list(adapter.transform(event))
         return []

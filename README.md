@@ -36,8 +36,7 @@ pip install -r requirements.txt
 Run a scenario, for example:
 
 ```bash
-python -m simulator.cli \
-  simulator/scenarios/easy/fat_finger_hijack/scenario.yaml
+python -m simulator.cli simulator/scenarios/easy/playbook1/scenario.yaml
 ```
 
 See some [output examples](examples).

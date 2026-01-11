@@ -1,3 +1,4 @@
+# telemetry/generators/bmp_telemetry.py
 """BMP telemetry generator for red-lantern-sim.
 
 Generates BMP (BGP Monitoring Protocol) RouteMonitoring messages

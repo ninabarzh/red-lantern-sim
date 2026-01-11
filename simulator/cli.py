@@ -18,6 +18,37 @@ from simulator.feeds.change_mgmt.cmdb_noise_feed import CMDBNoiseFeed
 from simulator.output.adapter import ScenarioAdapter
 
 
+def filter_line(line: str, mode: str) -> bool:
+    """Return True if the line should be skipped in the current mode."""
+    if mode == "training":
+        return False  # Never skip anything
+    # practice mode: skip training/debug/internal lines
+    if line.startswith(("SCENARIO:", "[INTERNAL]", "#")):
+        return True
+    return False
+
+
+def strip_scenario_fields(line: str | dict, mode: str) -> str | dict:
+    """Remove scenario metadata fields in practice mode."""
+    if mode != "practice":
+        return line
+    # If JSON string
+    if isinstance(line, str):
+        try:
+            parsed = json.loads(line)
+            if isinstance(parsed, dict) and "scenario" in parsed:
+                parsed = {k: v for k, v in parsed.items() if k != "scenario"}
+                return json.dumps(parsed, separators=(",", ":"))
+        except (json.JSONDecodeError, ValueError):
+            return line
+    # If dict
+    if isinstance(line, dict):
+        return {
+            k: v for k, v in line.items() if k not in ("scenario_metadata", "scenario")
+        }
+    return line
+
+
 def main(argv: list[str] | None = None) -> int | None:
     parser = argparse.ArgumentParser(
         prog="simulator.cli",
@@ -88,50 +119,17 @@ def main(argv: list[str] | None = None) -> int | None:
             if not line:
                 continue
 
-            # Skip SCENARIO debug lines in practice mode
-            if (
-                args.mode == "practice"
-                and isinstance(line, str)
-                and line.startswith("SCENARIO:")
-            ):
+            if isinstance(line, str) and filter_line(line, args.mode):
                 continue
 
-            # Skip internal documentation and metadata lines in practice mode
-            if (
-                args.mode == "practice"
-                and isinstance(line, str)
-                and line.startswith("[INTERNAL]")
-            ):
-                continue
+            line = strip_scenario_fields(line, args.mode)
 
-            # Skip internal documentation lines in practice mode
-            if (
-                args.mode == "practice"
-                and isinstance(line, str)
-                and line.startswith("#")
-            ):
-                continue
-
-            # Strip scenario field from JSON lines in practice mode
-            if args.mode == "practice" and isinstance(line, str):
-                try:
-                    parsed = json.loads(line)
-                    if isinstance(parsed, dict) and "scenario" in parsed:
-                        parsed = {k: v for k, v in parsed.items() if k != "scenario"}
-                        line = json.dumps(parsed, separators=(",", ":"))
-                except (json.JSONDecodeError, ValueError):
-                    pass
-
-            if args.mode == "practice" and isinstance(line, dict):
-                line = {
-                    k: v
-                    for k, v in line.items()
-                    if k not in ("scenario_metadata", "scenario")
-                }
-
-            event_record = {"line": line}
-            if args.mode == "training":
-                event_record["original_event"] = event
+            if isinstance(line, dict) and args.mode == "training":
+                event_record = {"line": line, "original_event": event}
+            else:
+                event_record = {"line": line}
+                if args.mode == "training":
+                    event_record["original_event"] = event
 
             transformed_lines.append(line)
             transformed_events.append(event_record)

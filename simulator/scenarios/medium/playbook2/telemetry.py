@@ -1,15 +1,15 @@
+# scenarios/medium/playbook2/telemetry.py
 """
 Telemetry mapping for Playbook 2: ROA Scope Expansion and Validation Mapping.
 
-Control-plane attack escalation showing:
-- Fraudulent ROA creation using compromised credentials (Action 2.1)
-- Global RPKI validation deployment mapping (Action 2.2)
-- Continuous ROA monitoring establishment (Action 2.3)
-
-This is the critical pivot point where we transition from legitimate RPKI
-participant to active attacker manipulating the validation infrastructure.
+Emits simulator events reflecting:
+- Compromised credential use
+- ROA creation and publication with realistic timing
+- Validator synchronisation with observer jitter
+- Monitoring and stability assessment
 """
 
+import random
 from typing import Any
 
 from simulator.engine.clock import SimulationClock
@@ -35,8 +35,62 @@ def register(event_bus: EventBus, clock: SimulationClock, scenario_name: str) ->
         scenario_name=scenario_name,
     )
 
+    # small helper to add random jitter in seconds
+    def jitter(seconds: float = 2.0) -> float:
+        return random.uniform(0, seconds)
+
+    def emit_rpki(
+        event_type: str,
+        attrs: dict[str, Any],
+        observer: str | None = None,
+        severity: str | None = None,
+    ) -> None:
+        """Emit RPKI-related syslog line with realistic jitter and optional severity override."""
+        event_ts = clock.now() + jitter(3.0)
+        rpki_event = {
+            "event_type": event_type,
+            "timestamp": event_ts,
+            "source": {
+                "feed": "rpki",
+                "observer": observer or attrs.get("observer", "unknown"),
+            },
+            "attributes": attrs,
+        }
+
+        # Map severity based on event type, with small variation
+        sev_map = {
+            "rpki.roa_created": "notice",
+            "rpki.roa_published": "info",
+            "rpki.validator_sync": "info",
+        }
+        line_sev = severity or sev_map.get(event_type, "info")
+
+        msg_parts = []
+        if event_type == "rpki.roa_created":
+            msg_parts.append(
+                f"ROA created for {attrs['prefix']} "
+                f"(origin AS{attrs['origin_as']}, maxLength /{attrs.get('max_length', 24)})"
+            )
+        elif event_type == "rpki.roa_published":
+            msg_parts.append(
+                f"ROA published: {attrs['prefix']} origin AS{attrs['origin_as']} in {attrs.get('trust_anchor', 'unknown')} repository"
+            )
+        elif event_type == "rpki.validator_sync":
+            msg_parts.append(
+                f"Validator sync: {observer or 'unknown-validator'} sees {attrs['prefix']} origin AS{attrs['origin_as']} -> {attrs.get('rpki_state', 'unknown')}"
+            )
+
+        syslog_gen.emit(
+            message=" ".join(msg_parts),
+            severity=line_sev,
+            subsystem="rpki",
+            scenario=rpki_event,
+        )
+
+        # Publish to event bus for other adapters if needed
+        event_bus.publish(rpki_event)
+
     def on_timeline_event(event: dict[str, Any]) -> None:
-        """Map scenario timeline events to appropriate telemetry sources."""
         entry = event.get("entry")
         if not entry:
             return
@@ -46,291 +100,46 @@ def register(event_bus: EventBus, clock: SimulationClock, scenario_name: str) ->
         attack_step = entry.get("attack_step", "unknown")
         incident_id = f"{scenario_name}-{prefix}-{attack_step}"
 
-        # === PHASE 1 RECAP ===
+        # === ROA creation ===
+        if action == "roa_creation":
+            attrs = {
+                "prefix": prefix,
+                "origin_as": entry.get("origin_as"),
+                "max_length": entry.get("max_length"),
+                "actor": entry.get("actor"),
+            }
+            emit_rpki("rpki.roa_created", attrs, observer="edge-router-01")
 
-        if action == "phase1_complete":
-            event_bus.publish(
-                {
-                    "event_type": "internal.phase_transition",
-                    "timestamp": clock.now(),
-                    "source": {"feed": "operator", "observer": "attack-team"},
-                    "attributes": {
-                        "phase": "phase_1_complete",
-                        "our_prefix": entry.get("our_prefix"),
-                        "target_prefix": entry.get("target_prefix"),
-                        "target_roa_status": entry.get("target_roa_status"),
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
+        # === ROA publication ===
+        elif action == "roa_published":
+            attrs = {
+                "prefix": prefix,
+                "origin_as": entry.get("origin_as"),
+                "trust_anchor": entry.get("trust_anchor"),
+            }
+            emit_rpki("rpki.roa_published", attrs, observer=entry.get("trust_anchor"))
 
-        # === ACTION 2.1: Fraudulent ROA Creation ===
-
-        elif action == "credential_use":
-            # Access event showing compromised credential use
-            event_bus.publish(
-                {
-                    "event_type": "access.login",
-                    "timestamp": clock.now(),
-                    "source": {"feed": "auth-system", "observer": "rir-portal"},
-                    "attributes": {
-                        "user": entry.get("user"),
-                        "source_ip": entry.get("source_ip"),
-                        "system": entry.get("system"),
-                        "suspicious": True,
-                        "reason": "unusual_location",
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-        elif action == "fraudulent_roa_request":
-            # RIR portal shows ROA creation request
-            event_bus.publish(
-                {
-                    "event_type": "rpki.roa_creation",
-                    "timestamp": clock.now(),
-                    "source": {
-                        "feed": "rir-portal",
-                        "observer": entry.get("registry", "ARIN"),
-                    },
-                    "attributes": {
-                        "prefix": prefix,
-                        "origin_as": entry.get("origin_as"),
-                        "max_length": entry.get("max_length"),
-                        "registry": entry.get("registry"),
-                        "actor": entry.get("actor"),
-                        "cover_story": entry.get("cover_story"),
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-            syslog_gen.emit(
-                message=f"ROA creation request for {prefix} (origin AS{entry.get('origin_as')}, maxLength /{entry.get('max_length')}) - FRAUDULENT",
-                severity="critical",
-                subsystem="rpki",
-                scenario={
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            )
-
-        elif action == "rir_validation_check":
-            # RIR validation system checks the request
-            event_bus.publish(
-                {
-                    "event_type": "rpki.validation",
-                    "timestamp": clock.now(),
-                    "source": {
-                        "feed": "rir-validation",
-                        "observer": entry.get("registry", "ARIN"),
-                    },
-                    "attributes": {
-                        "prefix": prefix,
-                        "requesting_as": entry.get("requesting_as"),
-                        "validation_result": entry.get("validation_result"),
-                        "registry": entry.get("registry"),
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-        elif action == "fraudulent_roa_accepted":
-            # RIR accepts the fraudulent ROA
-            syslog_gen.emit(
-                message=f"ROA creation accepted for {prefix} by {entry.get('registry')} - ATTACK SUCCEEDING",
-                severity="critical",
-                subsystem="rpki",
-                scenario={
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            )
-
-        elif action == "fraudulent_roa_published":
-            # Fraudulent ROA appears in repository
-            event_bus.publish(
-                {
-                    "event_type": "rpki.roa_published",
-                    "timestamp": clock.now(),
-                    "source": {
-                        "feed": "rpki-repository",
-                        "observer": entry.get("trust_anchor", "arin"),
-                    },
-                    "attributes": {
-                        "prefix": prefix,
-                        "origin_as": entry.get("origin_as"),
-                        "max_length": entry.get("max_length"),
-                        "trust_anchor": entry.get("trust_anchor"),
-                        "repository_url": entry.get("repository_url"),
-                        "fraudulent": True,
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-            syslog_gen.emit(
-                message=f"FRAUDULENT ROA published for {prefix} in {entry.get('trust_anchor')} repository",
-                severity="critical",
-                subsystem="rpki",
-                scenario={
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            )
-
+        # === Validator sync for main validators ===
         elif action == "validator_sync":
-            # Validators see the fraudulent ROA
-            event_bus.publish(
-                {
-                    "event_type": "rpki.validator_sync",
-                    "timestamp": clock.now(),
-                    "source": {
-                        "feed": "rpki-validator",
-                        "observer": entry.get("validator", "routinator"),
-                    },
-                    "attributes": {
-                        "prefix": prefix,
-                        "validator": entry.get("validator"),
-                        "rpki_state": entry.get("rpki_state"),
-                        "origin_as": entry.get("origin_as"),
-                        "sync_type": "repository_poll",
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
+            validators = ["routinator", "cloudflare", "ripe"]
+            for val in validators:
+                attrs = {
+                    "prefix": prefix,
+                    "origin_as": entry.get("origin_as"),
+                    "rpki_state": entry.get("rpki_state", "valid"),
                 }
-            )
+                emit_rpki("rpki.validator_sync", attrs, observer=val)
 
-        elif action == "conflicting_roas_detected":
-            # Multiple ROAs for same prefix detected
-            event_bus.publish(
-                {
-                    "event_type": "rpki.conflict_detected",
-                    "timestamp": clock.now(),
-                    "source": {
-                        "feed": "rpki-validator",
-                        "observer": "conflict-monitor",
-                    },
-                    "attributes": {
-                        "prefix": prefix,
-                        "roa_count": entry.get("roa_count"),
-                        "origins": entry.get("origins", []),
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-        # === ACTION 2.2: Validation Deployment Mapping ===
-
-        elif action == "validation_test_start":
-            event_bus.publish(
-                {
-                    "event_type": "internal.test_phase",
-                    "timestamp": clock.now(),
-                    "source": {"feed": "operator", "observer": "attack-team"},
-                    "attributes": {"test_type": entry.get("test_type")},
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
+        # === Test announcement for BMP / BGP realistic lines ===
         elif action == "test_announcement":
-            # Test BGP announcement to map validation deployment
-            test_prefix = entry.get("prefix")
-            bmp_event = {
-                "prefix": test_prefix,
-                "as_path": [65001, entry.get("origin_as")],
-                "origin_as": entry.get("origin_as"),
-                "next_hop": "198.51.100.254",
-                "peer_ip": "198.51.100.1",
-                "peer_as": 65001,
-                "peer_bgp_id": "198.51.100.1",
-                "rpki_state": entry.get("expected_rpki_state"),
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            }
-            bmp_gen.generate(bmp_event)
-
-            # Log peer response
-            syslog_gen.emit(
-                message=f"Validation test {entry.get('region')}: Announcement {test_prefix} AS{entry.get('origin_as')} - peer {entry.get('peer_response')}",
-                severity="notice",
-                subsystem="bgp",
-                scenario={
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            )
-
-        elif action == "validation_withdrawal":
-            # Withdraw test announcement
-            test_prefix = entry.get("prefix")
-            bmp_event = {
-                "prefix": test_prefix,
-                "as_path": [65001, entry.get("origin_as")],
-                "origin_as": entry.get("origin_as"),
-                "next_hop": "198.51.100.254",
-                "peer_ip": "198.51.100.1",
-                "peer_as": 65001,
-                "peer_bgp_id": "198.51.100.1",
-                "is_withdraw": True,
-                "scenario": {
-                    "name": scenario_name,
-                    "attack_step": attack_step,
-                    "incident_id": incident_id,
-                },
-            }
-            bmp_gen.generate(bmp_event)
-
-        elif action == "validation_map_complete":
-            # Validation deployment mapping complete
-            event_bus.publish(
+            bmp_gen.generate(
                 {
-                    "event_type": "internal.analysis_complete",
-                    "timestamp": clock.now(),
-                    "source": {"feed": "operator", "observer": "attack-team"},
-                    "attributes": {
-                        "regions": entry.get("regions", {}),
-                        "target_region": entry.get("target_region"),
-                    },
+                    "prefix": prefix,
+                    "origin_as": entry.get("origin_as"),
+                    "as_path": [65001, entry.get("origin_as")],
+                    "peer_ip": "198.51.100.1",
+                    "peer_as": 65001,
+                    "peer_bgp_id": "198.51.100.1",
                     "scenario": {
                         "name": scenario_name,
                         "attack_step": attack_step,
@@ -339,19 +148,62 @@ def register(event_bus: EventBus, clock: SimulationClock, scenario_name: str) ->
                 }
             )
 
-        elif action == "roa_visibility_check":
-            # Check fraudulent ROA visibility across validators
+            # Emit BGP syslog lines with small timestamp jitter
+            for peer_as in [65001, 65002]:
+                syslog_gen.emit(
+                    message=f"BGP update received from AS{peer_as} for {prefix}",
+                    severity="info",
+                    subsystem="bgp",
+                    scenario={
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                )
+                syslog_gen.emit(
+                    message=f"BGP update advertised to peer AS{peer_as}: {prefix} next-hop 192.0.2.254",
+                    severity="info",
+                    subsystem="bgp",
+                    scenario={
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                )
+
+        elif action == "test_withdrawal":
+            bmp_gen.generate(
+                {
+                    "prefix": prefix,
+                    "origin_as": entry.get("origin_as"),
+                    "is_withdraw": True,
+                    "scenario": {
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                }
+            )
+            for peer_as in [65001, 65002]:
+                syslog_gen.emit(
+                    message=f"BGP withdraw: {prefix} to peer AS{peer_as}",
+                    severity="info",
+                    subsystem="bgp",
+                    scenario={
+                        "name": scenario_name,
+                        "attack_step": attack_step,
+                        "incident_id": incident_id,
+                    },
+                )
+
+        # === Training notes (SCENARIO lines) ===
+        note = entry.get("note")
+        if note:
             event_bus.publish(
                 {
-                    "event_type": "rpki.visibility_check",
+                    "event_type": "training.note",
                     "timestamp": clock.now(),
-                    "source": {"feed": "rpki-validator", "observer": "multi-validator"},
-                    "attributes": {
-                        "prefix": prefix,
-                        "origin_as": entry.get("origin_as"),
-                        "validators_checked": entry.get("validators_checked", []),
-                        "visible_count": entry.get("visible_count"),
-                    },
+                    "line": f"SCENARIO: {note}",
                     "scenario": {
                         "name": scenario_name,
                         "attack_step": attack_step,
@@ -360,90 +212,4 @@ def register(event_bus: EventBus, clock: SimulationClock, scenario_name: str) ->
                 }
             )
 
-        # === ACTION 2.3: ROA Monitoring ===
-
-        elif action == "monitoring_deployed":
-            event_bus.publish(
-                {
-                    "event_type": "internal.monitoring_deployed",
-                    "timestamp": clock.now(),
-                    "source": {"feed": "operator", "observer": "attack-team"},
-                    "attributes": {
-                        "target_prefix": entry.get("target_prefix"),
-                        "check_interval": entry.get("check_interval"),
-                        "alert_on": entry.get("alert_on", []),
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-        elif action == "monitoring_baseline":
-            event_bus.publish(
-                {
-                    "event_type": "internal.monitoring_baseline",
-                    "timestamp": clock.now(),
-                    "source": {"feed": "operator", "observer": "attack-team"},
-                    "attributes": {
-                        "prefix": prefix,
-                        "roa_count": entry.get("roa_count"),
-                        "our_roa_present": entry.get("our_roa_present"),
-                        "victim_roa_count": entry.get("victim_roa_count"),
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-        elif action == "stability_check":
-            event_bus.publish(
-                {
-                    "event_type": "internal.stability_check",
-                    "timestamp": clock.now(),
-                    "source": {"feed": "operator", "observer": "attack-team"},
-                    "attributes": {
-                        "prefix": prefix,
-                        "hours_stable": entry.get("hours_stable"),
-                        "our_roa_present": entry.get("our_roa_present"),
-                        "no_alerts": entry.get("no_alerts"),
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-        # === PHASE 2 COMPLETE ===
-
-        elif action == "phase2_complete":
-            event_bus.publish(
-                {
-                    "event_type": "internal.phase_complete",
-                    "timestamp": clock.now(),
-                    "source": {"feed": "operator", "observer": "attack-team"},
-                    "attributes": {
-                        "phase": "phase_2",
-                        "fraudulent_roa_status": entry.get("fraudulent_roa_status"),
-                        "validation_map": entry.get("validation_map"),
-                        "monitoring_status": entry.get("monitoring_status"),
-                        "target_region": entry.get("target_region"),
-                        "ready_for": "phase_3_hijack_execution",
-                    },
-                    "scenario": {
-                        "name": scenario_name,
-                        "attack_step": attack_step,
-                        "incident_id": incident_id,
-                    },
-                }
-            )
-
-    # Subscribe to all timeline events
     event_bus.subscribe(on_timeline_event)
