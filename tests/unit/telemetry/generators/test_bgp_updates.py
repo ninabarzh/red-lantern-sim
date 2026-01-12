@@ -50,16 +50,20 @@ class TestBGPUpdateGenerator:
         published_event = mock_bus.publish.call_args[0][0]
 
         # Verify event structure
-        assert published_event["event_type"] == "bgp.update"
+        assert published_event["event_type"] == "bgp.rib_update"  # CORRECTED
         assert published_event["timestamp"] == 100
-        assert published_event["source"] == {"feed": "mock", "observer": "simulator"}
+        # CORRECTED source structure
+        assert published_event["source"]["router"] == "edge-router-01"
+        assert published_event["source"]["peer_ip"] == "10.0.0.2"
+        assert published_event["source"]["peer_as"] == 65530  # First AS in path
 
-        # Verify attributes
-        attributes = published_event["attributes"]
-        assert attributes["prefix"] == "192.0.2.0/24"
-        assert attributes["as_path"] == [65530, 65531, 65532]
-        assert attributes["origin_as"] == 65530
-        assert attributes["next_hop"] == "192.0.2.1"
+        # Verify bgp_data structure (not attributes)
+        bgp_data = published_event["bgp_data"]
+        assert bgp_data["type"] == "UPDATE"
+        assert bgp_data["prefix"] == "192.0.2.0/24"
+        assert bgp_data["as_path"] == [65530, 65531, 65532]
+        assert bgp_data["origin_as"] == 65530
+        assert bgp_data["next_hop"] == "192.0.2.1"
 
         # Verify default scenario
         scenario = published_event["scenario"]
@@ -98,7 +102,7 @@ class TestBGPUpdateGenerator:
         assert published_event["scenario"] == custom_scenario
         # Other fields should still be correct
         assert published_event["timestamp"] == 150
-        assert published_event["attributes"]["prefix"] == "203.0.113.0/24"
+        assert published_event["bgp_data"]["prefix"] == "203.0.113.0/24"
 
     def test_emit_update_empty_as_path(self):
         """Test emitting UPDATE with empty AS path."""
@@ -115,7 +119,9 @@ class TestBGPUpdateGenerator:
         )
 
         published_event = mock_bus.publish.call_args[0][0]
-        assert published_event["attributes"]["as_path"] == []
+        assert published_event["bgp_data"]["as_path"] == []
+        # peer_as should be 0 for empty path
+        assert published_event["source"]["peer_as"] == 0
 
     def test_emit_update_single_as_path(self):
         """Test emitting UPDATE with single AS in path."""
@@ -132,8 +138,9 @@ class TestBGPUpdateGenerator:
         )
 
         published_event = mock_bus.publish.call_args[0][0]
-        assert published_event["attributes"]["as_path"] == [65530]
-        assert published_event["attributes"]["origin_as"] == 65530
+        assert published_event["bgp_data"]["as_path"] == [65530]
+        assert published_event["bgp_data"]["origin_as"] == 65530
+        assert published_event["source"]["peer_as"] == 65530
 
     def test_emit_withdraw_basic(self):
         """Test emitting a basic BGP WITHDRAW event."""
@@ -145,18 +152,23 @@ class TestBGPUpdateGenerator:
 
         generator = BGPUpdateGenerator(mock_clock, mock_bus, scenario_name)
 
-        generator.emit_withdraw(prefix="192.0.2.0/24", withdrawn_by_as=65530)
+        generator.emit_withdraw(
+            prefix="192.0.2.0/24", origin_as=65530  # CORRECTED parameter name
+        )
 
         mock_bus.publish.assert_called_once()
         published_event = mock_bus.publish.call_args[0][0]
 
-        assert published_event["event_type"] == "bgp.withdraw"
+        assert published_event["event_type"] == "bgp.rib_withdraw"  # CORRECTED
         assert published_event["timestamp"] == 200
-        assert published_event["source"] == {"feed": "mock", "observer": "simulator"}
+        assert published_event["source"]["router"] == "edge-router-01"
+        assert published_event["source"]["peer_ip"] == "10.0.0.2"
+        assert published_event["source"]["peer_as"] == 65530
 
-        attributes = published_event["attributes"]
-        assert attributes["prefix"] == "192.0.2.0/24"
-        assert attributes["withdrawn_by_as"] == 65530
+        bgp_data = published_event["bgp_data"]
+        assert bgp_data["type"] == "WITHDRAW"
+        assert bgp_data["prefix"] == "192.0.2.0/24"
+        assert bgp_data["origin_as"] == 65530
 
         scenario = published_event["scenario"]
         assert scenario["name"] == scenario_name
@@ -178,7 +190,9 @@ class TestBGPUpdateGenerator:
         }
 
         generator.emit_withdraw(
-            prefix="203.0.113.0/24", withdrawn_by_as=64512, scenario=custom_scenario
+            prefix="203.0.113.0/24",
+            origin_as=64512,  # CORRECTED parameter name
+            scenario=custom_scenario,
         )
 
         published_event = mock_bus.publish.call_args[0][0]
@@ -192,26 +206,29 @@ class TestBGPUpdateGenerator:
         generator = BGPUpdateGenerator(mock_clock, mock_bus, "zero-as-test")
 
         generator.emit_withdraw(
-            prefix="0.0.0.0/0", withdrawn_by_as=0  # Default route  # AS zero
+            prefix="0.0.0.0/0", origin_as=0  # CORRECTED parameter name
         )
 
         published_event = mock_bus.publish.call_args[0][0]
-        assert published_event["attributes"]["withdrawn_by_as"] == 0
+        assert published_event["bgp_data"]["origin_as"] == 0
+        assert published_event["source"]["peer_as"] == 0
 
-    def test_emit_withdraw_negative_as(self):
-        """Test emitting WITHDRAW with negative AS (edge case)."""
+    def test_emit_withdraw_custom_peer_ip(self):
+        """Test emitting WITHDRAW with custom peer IP."""
         mock_clock = Mock(spec=SimulationClock)
         mock_bus = Mock(spec=EventBus)
 
-        generator = BGPUpdateGenerator(mock_clock, mock_bus, "negative-as-test")
+        generator = BGPUpdateGenerator(mock_clock, mock_bus, "custom-peer-test")
 
         generator.emit_withdraw(
             prefix="192.0.2.0/24",
-            withdrawn_by_as=-1,  # Negative AS (unusual but testable)
+            origin_as=65530,
+            peer_ip="203.0.113.1",  # Custom peer IP
         )
 
         published_event = mock_bus.publish.call_args[0][0]
-        assert published_event["attributes"]["withdrawn_by_as"] == -1
+        assert published_event["source"]["peer_ip"] == "203.0.113.1"
+        assert published_event["source"]["peer_as"] == 65530
 
     def test_multiple_emissions(self):
         """Test emitting multiple events."""
@@ -231,7 +248,7 @@ class TestBGPUpdateGenerator:
         )
 
         # Emit WITHDRAW
-        generator.emit_withdraw(prefix="192.0.2.0/24", withdrawn_by_as=65530)
+        generator.emit_withdraw(prefix="192.0.2.0/24", origin_as=65530)
 
         # Should be called twice
         assert mock_bus.publish.call_count == 2
@@ -241,11 +258,11 @@ class TestBGPUpdateGenerator:
 
         # First call should be UPDATE
         first_event = call_args[0][0][0]
-        assert first_event["event_type"] == "bgp.update"
+        assert first_event["event_type"] == "bgp.rib_update"
 
         # Second call should be WITHDRAW
         second_event = call_args[1][0][0]
-        assert second_event["event_type"] == "bgp.withdraw"
+        assert second_event["event_type"] == "bgp.rib_withdraw"
 
     def test_timestamp_updates(self):
         """Test that different emissions use current clock time."""
@@ -265,7 +282,7 @@ class TestBGPUpdateGenerator:
 
         # Second emission at time 200
         mock_clock.now.return_value = 200
-        generator.emit_withdraw(prefix="192.0.2.0/24", withdrawn_by_as=65530)
+        generator.emit_withdraw(prefix="192.0.2.0/24", origin_as=65530)
 
         call_args = mock_bus.publish.call_args_list
 
@@ -307,8 +324,8 @@ class TestBGPUpdateGenerator:
         )
 
         published_event = mock_bus.publish.call_args[0][0]
-        assert published_event["attributes"]["prefix"] == "2001:db8::/32"
-        assert published_event["attributes"]["next_hop"] == "2001:db8::1"
+        assert published_event["bgp_data"]["prefix"] == "2001:db8::/32"
+        assert published_event["bgp_data"]["next_hop"] == "2001:db8::1"
 
     def test_partial_scenario_override(self):
         """Test that custom scenario completely replaces default."""
@@ -396,5 +413,6 @@ def test_type_hints():
     # Check emit_withdraw signature
     sig = inspect.signature(generator_class.emit_withdraw)
     assert "prefix" in sig.parameters
-    assert "withdrawn_by_as" in sig.parameters
+    assert "origin_as" in sig.parameters  # CORRECTED
+    assert "peer_ip" in sig.parameters
     assert "scenario" in sig.parameters

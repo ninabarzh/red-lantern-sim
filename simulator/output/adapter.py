@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from .bmp_adapter import BMPAdapter
 from .cmdb_adapter import CMDBAdapter
 from .internal_adapter import InternalAdapter
+from .monitoring_adapter import MonitoringAdapter
 from .router_adapter import RouterAdapter
 from .rpki_adapter import RPKIAdapter
 from .tacacs_adapter import TACACSAdapter
@@ -37,6 +38,8 @@ class ScenarioAdapter:
             "internal.phase_complete": InternalAdapter(),
             "internal.monitoring_status": InternalAdapter(),
             "internal.phase_transition": InternalAdapter(),
+            # Monitoring effects
+            "monitoring.anomaly": MonitoringAdapter(),
         }
 
     def transform(self, event: dict) -> list[str]:

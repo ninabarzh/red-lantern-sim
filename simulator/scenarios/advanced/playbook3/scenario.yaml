@@ -59,6 +59,26 @@ timeline:
     attack_step: "impact"
     note: "Traffic impact begins: APAC users experience increased latency (240ms vs 35ms baseline)"
 
+  - t: 250
+    action: traffic_anomaly
+    prefix: "203.0.113.128/25"
+    region: "EMEA"
+    rtt_ms: 180
+    baseline_ms: 20
+    packet_loss_pct: 0.5
+    attack_step: "impact"
+    note: "Traffic impact spreads: EMEA users affected"
+
+  - t: 260
+    action: traffic_anomaly
+    prefix: "203.0.113.128/25"
+    region: "AMER"
+    rtt_ms: 95
+    baseline_ms: 15
+    packet_loss_pct: 0.3
+    attack_step: "impact"
+    note: "Traffic impact global: AMER users now experiencing issues"
+
   - t: 300
     action: traffic_anomaly
     prefix: "203.0.113.128/25"
@@ -68,6 +88,26 @@ timeline:
     packet_loss_pct: 1.4
     attack_step: "impact"
     note: "Traffic impact worsens: packet loss increases to 1.4% as hijack traffic load grows"
+
+  - t: 310
+    action: traffic_anomaly
+    prefix: "203.0.113.128/25"
+    region: "EMEA"
+    rtt_ms: 220
+    baseline_ms: 20
+    packet_loss_pct: 0.9
+    attack_step: "impact"
+    note: "EMEA impact worsening"
+
+  - t: 320
+    action: traffic_anomaly
+    prefix: "203.0.113.128/25"
+    region: "AMER"
+    rtt_ms: 120
+    baseline_ms: 15
+    packet_loss_pct: 0.6
+    attack_step: "impact"
+    note: "AMER impact increasing"
 
   # === Sustained operation ===
   - t: 900
