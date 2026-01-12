@@ -1,9 +1,7 @@
 # telemetry/generators/router_syslog.py
 """
 Router syslog generator for Red Lantern simulator.
-
-Generates syslog events related to BGP, such as session resets and prefix limits.
-Supports optional structured scenario metadata for future-proofing.
+Emits STRUCTURED events for adapters to format.
 """
 
 from typing import Any
@@ -34,23 +32,16 @@ class RouterSyslogGenerator:
         self.router_name = router_name
         self.scenario_name = scenario_name
 
-    def emit(
+    def bgp_neighbor_state_change(
         self,
-        message: str,
-        severity: str = "info",
-        subsystem: str | None = None,
-        peer_ip: str | None = None,
+        peer_ip: str,
+        state: str,  # "up" or "down"
+        reason: str = "",
         scenario: dict[str, Any] | None = None,
     ) -> None:
         """
-        Emit a generic syslog event.
-
-        Args:
-            message: Log message.
-            severity: syslog severity (info, notice, warning, error).
-            subsystem: Optional subsystem name (e.g., bgp).
-            peer_ip: Optional peer IP for BGP messages.
-            scenario: Optional structured metadata (attack_step, incident_id, etc.)
+        Emit STRUCTURED BGP neighbor state change event.
+        Adapter will format this into a log line.
         """
         event = {
             "event_type": "router.syslog",
@@ -58,69 +49,45 @@ class RouterSyslogGenerator:
             "source": {"feed": "router-syslog", "observer": "router"},
             "attributes": {
                 "router": self.router_name,
-                "severity": severity,
-                "message": message,
-                "subsystem": subsystem,
+                "severity": "warning" if state == "down" else "notice",
+                "subsystem": "bgp",
                 "peer_ip": peer_ip,
+                "bgp_event": "neighbor_state_change",  # STRUCTURED
+                "neighbor_state": state,  # STRUCTURED
+                "change_reason": reason,  # STRUCTURED
             },
             "scenario": scenario
             or {"name": self.scenario_name, "attack_step": None, "incident_id": None},
         }
         self.event_bus.publish(event)
 
-    def prefix_limit_exceeded(
-        self, peer_ip: str, limit: int, scenario: dict[str, Any] | None = None
-    ) -> None:
-        """
-        Emit an ERROR for exceeding prefix limit.
-
-        Args:
-            peer_ip: Peer that exceeded the limit.
-            limit: Prefix limit configured.
-            scenario: Optional structured metadata.
-        """
-        self.emit(
-            message=f"Prefix limit {limit} exceeded from neighbour {peer_ip}",
-            severity="error",
-            subsystem="bgp",
-            peer_ip=peer_ip,
-            scenario=scenario,
-        )
-
-    def bgp_session_reset(
-        self, peer_ip: str, reason: str, scenario: dict[str, Any] | None = None
-    ) -> None:
-        """
-        Emit a WARNING for BGP session reset.
-
-        Args:
-            peer_ip: Peer whose session reset.
-            reason: Reason for reset.
-            scenario: Optional structured metadata.
-        """
-        self.emit(
-            message=f"BGP session to {peer_ip} reset: {reason}",
-            severity="warning",
-            subsystem="bgp",
-            peer_ip=peer_ip,
-            scenario=scenario,
-        )
-
     def configuration_change(
-        self, user: str, change_summary: str, attack_step: str | None = None
+        self,
+        user: str,
+        change_type: str,  # STRUCTURED: "roa_request", "bgp_config", etc.
+        target: str,  # STRUCTURED: what was changed
+        attack_step: str | None = None,
     ) -> None:
         """
-        Emit a syslog for configuration changes.
-
-        Args:
-            user: Who made the change.
-            change_summary: Short description of the change.
-            attack_step: Optional scenario attack step.
+        Emit STRUCTURED configuration change event.
         """
-        message = f"Configuration change by {user}: {change_summary}"
-        self.emit(
-            message=message,
-            severity="notice",
-            subsystem="config",
-            scenario={"name": self.scenario_name, "attack_step": attack_step},
-        )
+        event = {
+            "event_type": "router.syslog",
+            "timestamp": self.clock.now(),
+            "source": {"feed": "router-syslog", "observer": "router"},
+            "attributes": {
+                "router": self.router_name,
+                "severity": "notice",
+                "subsystem": "config",
+                "config_event": "change",  # STRUCTURED
+                "changed_by": user,  # STRUCTURED
+                "change_type": change_type,  # STRUCTURED
+                "change_target": target,  # STRUCTURED
+            },
+            "scenario": {
+                "name": self.scenario_name,
+                "attack_step": attack_step,
+                "incident_id": None,
+            },
+        }
+        self.event_bus.publish(event)

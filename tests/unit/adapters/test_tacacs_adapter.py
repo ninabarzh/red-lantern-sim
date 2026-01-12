@@ -18,7 +18,7 @@ def _format_ts(ts: int) -> str:
 
 
 def test_access_login_minimal(tacacs_adapter):
-    event = {"event_type": "access.login", "timestamp": 1700000000, "attributes": {}}
+    event = {"event_type": "access.login", "timestamp": 1767225600, "attributes": {}}
     lines = list(tacacs_adapter.transform(event))
     ts_str = _format_ts(event["timestamp"])
     # Default user is "unknown", no source_ip, no location

@@ -1,5 +1,4 @@
 # simulator/output/rpki_adapter.py
-
 """RPKI output adapter for red-lantern-sim.
 
 Transforms RPKI-related events (validation, queries, ROA operations) into syslog-like lines.
@@ -37,8 +36,18 @@ class RPKIAdapter(Adapter):
             max_length = attr.get("max_length")
             registry = attr.get("registry")
             actor = attr.get("actor", "unknown")
+            status = attr.get("status")  # Check for status field
 
-            msg = f"ROA created for {prefix} (origin AS{origin_as}, maxLength /{max_length}) via {registry} by {actor}"
+            if status == "accepted":
+                # ROA accepted message (no max_length needed)
+                msg = f"ROA accepted for {prefix} AS{origin_as} via {registry}"
+            elif max_length:
+                # ROA creation with max_length
+                msg = f"ROA created for {prefix} (origin AS{origin_as}, maxLength /{max_length}) via {registry} by {actor}"
+            else:
+                # ROA creation without max_length
+                msg = f"ROA created for {prefix} (origin AS{origin_as}) via {registry} by {actor}"
+
             pri = self.FACILITY * 8 + 5  # notice
             lines.append(f"<{pri}>{ts_str} {observer} {msg}")
 
@@ -52,17 +61,24 @@ class RPKIAdapter(Adapter):
             lines.append(f"<{pri}>{ts_str} {observer} {msg}")
 
         # --- Validator sync ---
+        # In rpki_adapter.py validator_sync section:
         elif event_type == "rpki.validator_sync":
             prefix = attr.get("prefix")
-            validator = (
-                attr.get("validator") or observer
-            )  # Use event's validator or observer as fallback
-            rpki_state = attr.get("rpki_state", "unknown")
+            origin_as = attr.get("origin_as")
+            validator = attr.get("validator") or observer
+            rpki_state = attr.get("rpki_state", "UNKNOWN")
+            revalidation = attr.get("revalidation", False)
 
-            # Build realistic sync message
-            msg = f"Validator sync: {validator} sees {prefix} origin AS{attr.get('origin_as')} -> {rpki_state}"
+            if not origin_as:
+                origin_as = "unknown"
 
-            pri = self.FACILITY * 8 + 6  # info
+            # Format with optional re-validation marker
+            if revalidation:
+                msg = f"RPKI_REVALIDATION: {prefix} AS{origin_as} → {rpki_state} ({validator})"
+            else:
+                msg = f"RPKI_VALIDATION: {prefix} AS{origin_as} → {rpki_state} ({validator})"
+
+            pri = self.FACILITY * 8 + 6
             lines.append(f"<{pri}>{ts_str} {observer} {msg}")
 
         # --- Validation query ---
@@ -70,7 +86,14 @@ class RPKIAdapter(Adapter):
             prefix = attr.get("prefix", "unknown")
             origin_as = attr.get("origin_as", "unknown")
             query_type = attr.get("query_type", "status_check")
-            msg = f"RPKI query: {prefix} AS{origin_as} ({query_type})"
+            validation_result = attr.get("validation_result", "unknown")
+
+            # Build message with validation result
+            if validation_result != "unknown":
+                msg = f"RPKI query: {prefix} AS{origin_as} → {validation_result}"
+            else:
+                msg = f"RPKI query: {prefix} AS{origin_as} ({query_type})"
+
             pri = self.FACILITY * 8 + 6
             lines.append(f"<{pri}>{ts_str} {observer} {msg}")
 
@@ -91,7 +114,11 @@ class RPKIAdapter(Adapter):
             prefix = attr.get("prefix")
             allocated_to = attr.get("allocated_to")
             registry = attr.get("registry")
-            msg = f"WHOIS query: {prefix} allocated to {allocated_to} via {registry}"
+            origin_as = attr.get("origin_as", "unknown")
+
+            # Standardized format
+            msg = f"WHOIS_QUERY: {prefix} → '{allocated_to}' AS{origin_as} ({registry})"
+
             pri = self.FACILITY * 8 + 6
             lines.append(f"<{pri}>{ts_str} {observer} {msg}")
 

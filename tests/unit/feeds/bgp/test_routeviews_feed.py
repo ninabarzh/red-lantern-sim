@@ -55,7 +55,7 @@ class TestRouteViewsFeedMock:
             feed = RouteViewsFeedMock()
 
             update = feed.generate_update(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
                 next_hop="198.32.176.1",
@@ -74,7 +74,7 @@ class TestRouteViewsFeedMock:
             feed = RouteViewsFeedMock(collector="route-views.linx")
 
             update = feed.generate_update(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
                 next_hop="198.32.176.1",
@@ -89,7 +89,7 @@ class TestRouteViewsFeedMock:
             feed = RouteViewsFeedMock()
 
             update = feed.generate_update(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
                 next_hop="198.32.176.1",
@@ -106,7 +106,7 @@ class TestRouteViewsFeedMock:
             feed = RouteViewsFeedMock()
 
             withdrawal = feed.generate_withdrawal(
-                timestamp=1700000000, prefix="203.0.113.0/24"
+                timestamp=1767225600, prefix="203.0.113.0/24"
             )
 
             assert withdrawal["type"] == "bgp4mp_message"
@@ -119,7 +119,7 @@ class TestRouteViewsFeedMock:
         with patch.dict(os.environ, {}, clear=True):
             feed = RouteViewsFeedMock()
             update = feed.generate_update(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
                 next_hop="198.32.176.1",
@@ -132,7 +132,7 @@ class TestRouteViewsFeedMock:
             )
 
             assert telemetry["event_type"] == "bgp.update"
-            assert telemetry["timestamp"] == 1700000000
+            assert telemetry["timestamp"] == 1767225600
             assert telemetry["attributes"]["prefix"] == "203.0.113.0/24"
             assert telemetry["source"]["observer"] == "route-views.amsix"
             assert telemetry["scenario"]["name"] == "test-scenario"
@@ -143,7 +143,7 @@ class TestRouteViewsFeedMock:
 
         with patch.dict(os.environ, {}, clear=True):
             event = mock_routeviews_update(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
                 next_hop="198.32.176.1",
@@ -161,7 +161,7 @@ class TestRouteViewsFeedMock:
         # Even with env var set, explicit collector should take precedence
         with patch.dict(os.environ, {"ROUTEVIEWS_COLLECTOR": "route-views.amsix"}):
             event = mock_routeviews_update(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
                 as_path=[6939, 64500],
                 next_hop="198.32.176.1",
@@ -186,14 +186,14 @@ class TestRouteViewsFeedMockTableDump:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002, 65003],
             next_hop="198.51.100.1",
         )
 
         assert result["type"] == "table_dump_v2"
-        assert result["timestamp"] == 1700000000
+        assert result["timestamp"] == 1767225600
         assert result["collector"] == "route-views.amsix"
         assert result["prefix"] == "203.0.113.0/24"
         assert result["prefix_length"] == 24
@@ -207,7 +207,7 @@ class TestRouteViewsFeedMockTableDump:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -222,7 +222,7 @@ class TestRouteViewsFeedMockTableDump:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -237,7 +237,7 @@ class TestRouteViewsFeedMockTableDump:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -251,7 +251,7 @@ class TestRouteViewsFeedMockTableDump:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="192.0.2.0/25",
             as_path=[6939, 174, 64500],
             next_hop="198.32.176.1",
@@ -270,7 +270,7 @@ class TestRouteViewsFeedMockTableDump:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[],
             next_hop="198.51.100.1",
@@ -284,7 +284,7 @@ class TestRouteViewsFeedMockTableDump:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001],
             next_hop="198.51.100.1",
@@ -298,7 +298,7 @@ class TestRouteViewsFeedMockTableDump:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001],
             next_hop="198.51.100.1",
@@ -315,7 +315,7 @@ class TestToTelemetryEventTableDump:
         """Test converting table dump to telemetry format."""
         feed = RouteViewsFeedMock()
         table_dump = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002, 65003],
             next_hop="198.51.100.1",
@@ -324,7 +324,7 @@ class TestToTelemetryEventTableDump:
         telemetry = RouteViewsFeedMock.to_telemetry_event(table_dump)
 
         assert telemetry["event_type"] == "bgp.table_entry"
-        assert telemetry["timestamp"] == 1700000000
+        assert telemetry["timestamp"] == 1767225600
         assert telemetry["source"]["feed"] == "routeviews"
         assert telemetry["source"]["observer"] == "route-views.amsix"
         assert telemetry["attributes"]["prefix"] == "203.0.113.0/24"
@@ -336,7 +336,7 @@ class TestToTelemetryEventTableDump:
         """Test table dump conversion with scenario info (lines 188-192)."""
         feed = RouteViewsFeedMock()
         table_dump = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -360,7 +360,7 @@ class TestToTelemetryEventWithScenario:
         """Test UPDATE with only scenario_name."""
         feed = RouteViewsFeedMock()
         update = feed.generate_update(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -379,7 +379,7 @@ class TestToTelemetryEventWithScenario:
         """Test UPDATE with only attack_step."""
         feed = RouteViewsFeedMock()
         update = feed.generate_update(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -398,7 +398,7 @@ class TestToTelemetryEventWithScenario:
         """Test WITHDRAWAL with scenario info."""
         feed = RouteViewsFeedMock()
         withdrawal = feed.generate_withdrawal(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
         )
 
@@ -416,7 +416,7 @@ class TestToTelemetryEventWithScenario:
         """Test that scenario block is not added when both are None."""
         feed = RouteViewsFeedMock()
         update = feed.generate_update(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -433,7 +433,7 @@ class TestConvenienceFunctionsWithCollector:
     def test_mock_routeviews_update_with_custom_collector(self):
         """Test mock_routeviews_update with custom collector."""
         result = mock_routeviews_update(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -447,7 +447,7 @@ class TestConvenienceFunctionsWithCollector:
         """Test mock_routeviews_update using environment variable."""
         with patch.dict(os.environ, {"ROUTEVIEWS_COLLECTOR": "route-views.saopaulo"}):
             result = mock_routeviews_update(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
                 as_path=[65001, 65002],
                 next_hop="198.51.100.1",
@@ -459,7 +459,7 @@ class TestConvenienceFunctionsWithCollector:
         """Test mock_routeviews_update uses default Amsterdam collector."""
         with patch.dict(os.environ, {}, clear=True):
             result = mock_routeviews_update(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
                 as_path=[65001, 65002],
                 next_hop="198.51.100.1",
@@ -470,7 +470,7 @@ class TestConvenienceFunctionsWithCollector:
     def test_mock_routeviews_withdrawal_with_custom_collector(self):
         """Test mock_routeviews_withdrawal with custom collector."""
         result = mock_routeviews_withdrawal(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             collector="route-views.fra",
         )
@@ -482,7 +482,7 @@ class TestConvenienceFunctionsWithCollector:
         """Test mock_routeviews_withdrawal using environment variable."""
         with patch.dict(os.environ, {"ROUTEVIEWS_COLLECTOR": "route-views.paris"}):
             result = mock_routeviews_withdrawal(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
             )
 
@@ -492,7 +492,7 @@ class TestConvenienceFunctionsWithCollector:
         """Test mock_routeviews_withdrawal uses default Amsterdam collector."""
         with patch.dict(os.environ, {}, clear=True):
             result = mock_routeviews_withdrawal(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix="203.0.113.0/24",
             )
 
@@ -505,7 +505,7 @@ class TestConvenienceFunctionsWithAttributes:
     def test_mock_routeviews_update_with_attributes_kwarg(self):
         """Test mock_routeviews_update passes kwargs to generate_update."""
         result = mock_routeviews_update(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -554,7 +554,7 @@ class TestEdgeCasesAndIntegration:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_update(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001, 65002],
             next_hop="198.51.100.1",
@@ -571,7 +571,7 @@ class TestEdgeCasesAndIntegration:
         rv_message = {
             "type": "bgp4mp_message",
             "subtype": "update",
-            "timestamp": 1700000000,
+            "timestamp": 1767225600,
             "collector": "route-views.amsix",
             "peer_ip": "193.0.0.56",
             "announced_prefixes": ["203.0.113.0/24"],
@@ -605,7 +605,7 @@ class TestEdgeCasesAndIntegration:
 
         for prefix, expected_length in test_cases:
             result = feed.generate_table_dump(
-                timestamp=1700000000,
+                timestamp=1767225600,
                 prefix=prefix,
                 as_path=[65001],
                 next_hop="198.51.100.1",
@@ -617,7 +617,7 @@ class TestEdgeCasesAndIntegration:
         feed = RouteViewsFeedMock()
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=[65001],
             next_hop="198.51.100.1",
@@ -632,7 +632,7 @@ class TestEdgeCasesAndIntegration:
         long_path = list(range(65001, 65020))
 
         result = feed.generate_table_dump(
-            timestamp=1700000000,
+            timestamp=1767225600,
             prefix="203.0.113.0/24",
             as_path=long_path,
             next_hop="198.51.100.1",
