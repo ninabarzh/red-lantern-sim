@@ -1,65 +1,119 @@
 [
   {
-    "line": "Jan 01 00:01:00 tacacs-server admin@victim-network.net login from 185.220.101.45"
+    "line": "<13>Jan 01 00:02:00 edge-router-01 ROA created for 203.0.113.0/24 (origin AS64513, maxLength /25)"
   },
   {
-    "line": "<29>Jan 01 00:02:00 ARIN ROA creation request: 203.0.113.0/24 origin AS64513 maxLength /25 by admin@victim-network.net via ARIN"
+    "line": "<14>Jan 01 00:40:00 edge-router-01 ROA published: 203.0.113.0/24 origin AS64513 in arin repository"
   },
   {
-    "line": "<10>Jan 01 00:02:00 edge-router-01 ROA creation request for 203.0.113.0/24 (origin AS64513, maxLength /25) - FRAUDULENT"
+    "line": "<30>Jan 01 00:40:02 arin arin ROA published: 203.0.113.0/24 origin AS64513"
   },
   {
-    "line": "<30>Jan 01 00:03:00 ARIN RPKI validation: 203.0.113.0/24 origin ASNone -> unknown"
+    "line": "<14>Jan 01 00:45:00 edge-router-01 Validator sync: routinator sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<10>Jan 01 00:04:00 edge-router-01 ROA creation accepted for 203.0.113.0/24 by ARIN - ATTACK SUCCEEDING"
+    "line": "<30>Jan 01 00:45:02 routinator Validator sync: routinator sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<30>Jan 01 00:40:00 arin ROA published: 203.0.113.0/24 origin AS64513 in arin repository"
+    "line": "<14>Jan 01 00:45:00 edge-router-01 Validator sync: cloudflare sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<10>Jan 01 00:40:00 edge-router-01 FRAUDULENT ROA published for 203.0.113.0/24 in arin repository"
+    "line": "<30>Jan 01 00:45:02 cloudflare Validator sync: cloudflare sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<30>Jan 01 00:45:00 routinator Validator sync: routinator sees 203.0.113.0/24 as valid"
+    "line": "<14>Jan 01 00:45:00 edge-router-01 Validator sync: ripe sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<30>Jan 01 00:46:00 cloudflare Validator sync: cloudflare sees 203.0.113.0/24 as valid"
+    "line": "<30>Jan 01 00:45:01 ripe Validator sync: ripe sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<30>Jan 01 00:47:00 ripe Validator sync: ripe sees 203.0.113.0/24 as valid"
+    "line": "<14>Jan 01 00:46:00 edge-router-01 Validator sync: routinator sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 198.51.100.254 ORIGIN_AS 64514"
+    "line": "<30>Jan 01 00:46:02 routinator Validator sync: routinator sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "{\"event_type\":\"bmp_route_monitoring\",\"timestamp\":3060,\"source\":{\"feed\":\"bmp-collector\",\"observer\":\"collector-01\"},\"peer_header\":{\"peer_type\":0,\"peer_address\":\"198.51.100.1\",\"peer_as\":65001,\"peer_bgp_id\":\"198.51.100.1\",\"timestamp_seconds\":3060,\"timestamp_microseconds\":0},\"bgp_update\":{\"prefix\":\"198.51.100.0/24\",\"prefix_length\":24,\"afi\":1,\"safi\":1,\"is_withdraw\":false,\"as_path\":[65001,64514],\"origin_as\":64514,\"next_hop\":\"198.51.100.254\",\"origin\":\"IGP\"},\"rpki_validation\":{\"state\":\"invalid\",\"validation_timestamp\":3060}}"
+    "line": "<14>Jan 01 00:46:00 edge-router-01 Validator sync: cloudflare sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<13>Jan 01 00:51:00 edge-router-01 Validation test AMER: Announcement 198.51.100.0/24 AS64514 - peer rejected"
+    "line": "<30>Jan 01 00:46:02 cloudflare Validator sync: cloudflare sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 198.51.100.254 ORIGIN_AS 64514"
+    "line": "<14>Jan 01 00:46:00 edge-router-01 Validator sync: ripe sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "{\"event_type\":\"bmp_route_monitoring\",\"timestamp\":3120,\"source\":{\"feed\":\"bmp-collector\",\"observer\":\"collector-01\"},\"peer_header\":{\"peer_type\":0,\"peer_address\":\"198.51.100.1\",\"peer_as\":65001,\"peer_bgp_id\":\"198.51.100.1\",\"timestamp_seconds\":3120,\"timestamp_microseconds\":0},\"bgp_update\":{\"prefix\":\"198.51.100.0/24\",\"prefix_length\":24,\"afi\":1,\"safi\":1,\"is_withdraw\":false,\"as_path\":[65001,64514],\"origin_as\":64514,\"next_hop\":\"198.51.100.254\",\"origin\":\"IGP\"},\"rpki_validation\":{\"state\":\"invalid\",\"validation_timestamp\":3120}}"
+    "line": "<30>Jan 01 00:46:01 ripe Validator sync: ripe sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<13>Jan 01 00:52:00 edge-router-01 Validation test EMEA: Announcement 198.51.100.0/24 AS64514 - peer accepted"
+    "line": "<14>Jan 01 00:47:00 edge-router-01 Validator sync: routinator sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 198.51.100.254 ORIGIN_AS 64514"
+    "line": "<30>Jan 01 00:47:00 routinator Validator sync: routinator sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "{\"event_type\":\"bmp_route_monitoring\",\"timestamp\":3180,\"source\":{\"feed\":\"bmp-collector\",\"observer\":\"collector-01\"},\"peer_header\":{\"peer_type\":0,\"peer_address\":\"198.51.100.1\",\"peer_as\":65001,\"peer_bgp_id\":\"198.51.100.1\",\"timestamp_seconds\":3180,\"timestamp_microseconds\":0},\"bgp_update\":{\"prefix\":\"198.51.100.0/24\",\"prefix_length\":24,\"afi\":1,\"safi\":1,\"is_withdraw\":false,\"as_path\":[65001,64514],\"origin_as\":64514,\"next_hop\":\"198.51.100.254\",\"origin\":\"IGP\"},\"rpki_validation\":{\"state\":\"invalid\",\"validation_timestamp\":3180}}"
+    "line": "<14>Jan 01 00:47:00 edge-router-01 Validator sync: cloudflare sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "<13>Jan 01 00:53:00 edge-router-01 Validation test APAC: Announcement 198.51.100.0/24 AS64514 - peer mixed"
+    "line": "<30>Jan 01 00:47:00 cloudflare Validator sync: cloudflare sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 198.51.100.254 ORIGIN_AS 64514"
+    "line": "<14>Jan 01 00:47:00 edge-router-01 Validator sync: ripe sees 203.0.113.0/24 origin AS64513 -> valid"
   },
   {
-    "line": "{\"event_type\":\"bmp_route_monitoring\",\"timestamp\":3240,\"source\":{\"feed\":\"bmp-collector\",\"observer\":\"collector-01\"},\"peer_header\":{\"peer_type\":0,\"peer_address\":\"198.51.100.1\",\"peer_as\":65001,\"peer_bgp_id\":\"198.51.100.1\",\"timestamp_seconds\":3240,\"timestamp_microseconds\":0},\"bgp_update\":{\"prefix\":\"198.51.100.0/24\",\"prefix_length\":24,\"afi\":1,\"safi\":1,\"is_withdraw\":true,\"as_path\":[65001,64514],\"origin_as\":64514,\"next_hop\":\"198.51.100.254\",\"origin\":\"IGP\"}}"
+    "line": "<30>Jan 01 00:47:02 ripe Validator sync: ripe sees 203.0.113.0/24 origin AS64513 -> valid"
+  },
+  {
+    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 192.0.2.254 ORIGIN_AS 64514"
+  },
+  {
+    "line": "<14>Jan 01 00:51:00 edge-router-01 BGP update received from AS65001 for 198.51.100.0/24"
+  },
+  {
+    "line": "<14>Jan 01 00:51:00 edge-router-01 BGP update advertised to peer AS65001: 198.51.100.0/24 next-hop 192.0.2.254"
+  },
+  {
+    "line": "<14>Jan 01 00:51:00 edge-router-01 BGP update received from AS65002 for 198.51.100.0/24"
+  },
+  {
+    "line": "<14>Jan 01 00:51:00 edge-router-01 BGP update advertised to peer AS65002: 198.51.100.0/24 next-hop 192.0.2.254"
+  },
+  {
+    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 192.0.2.254 ORIGIN_AS 64514"
+  },
+  {
+    "line": "<14>Jan 01 00:52:00 edge-router-01 BGP update received from AS65001 for 198.51.100.0/24"
+  },
+  {
+    "line": "<14>Jan 01 00:52:00 edge-router-01 BGP update advertised to peer AS65001: 198.51.100.0/24 next-hop 192.0.2.254"
+  },
+  {
+    "line": "<14>Jan 01 00:52:00 edge-router-01 BGP update received from AS65002 for 198.51.100.0/24"
+  },
+  {
+    "line": "<14>Jan 01 00:52:00 edge-router-01 BGP update advertised to peer AS65002: 198.51.100.0/24 next-hop 192.0.2.254"
+  },
+  {
+    "line": "BMP ROUTE: prefix 198.51.100.0/24 AS_PATH [65001, 64514] NEXT_HOP 192.0.2.254 ORIGIN_AS 64514"
+  },
+  {
+    "line": "<14>Jan 01 00:53:00 edge-router-01 BGP update received from AS65001 for 198.51.100.0/24"
+  },
+  {
+    "line": "<14>Jan 01 00:53:00 edge-router-01 BGP update advertised to peer AS65001: 198.51.100.0/24 next-hop 192.0.2.254"
+  },
+  {
+    "line": "<14>Jan 01 00:53:00 edge-router-01 BGP update received from AS65002 for 198.51.100.0/24"
+  },
+  {
+    "line": "<14>Jan 01 00:53:00 edge-router-01 BGP update advertised to peer AS65002: 198.51.100.0/24 next-hop 192.0.2.254"
+  },
+  {
+    "line": "<13>Jan 01 01:32:00 edge-router-01 BGP withdrawal: 198.51.100.0/24 from AS64514"
+  },
+  {
+    "line": "<14>Jan 01 00:54:00 edge-router-01 BGP withdraw: 198.51.100.0/24 to peer AS65001"
+  },
+  {
+    "line": "<14>Jan 01 00:54:00 edge-router-01 BGP withdraw: 198.51.100.0/24 to peer AS65002"
   }
 ]
