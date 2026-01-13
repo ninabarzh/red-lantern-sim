@@ -47,7 +47,7 @@ class TestScenarioAdapterTransform:
         # Create mock event with known type
         test_event = {
             "event_type": "bgp.update",
-            "timestamp": 1700000000,
+            "timestamp": 1767225600,
             "attributes": {"prefix": "203.0.113.0/24"},
         }
 
@@ -74,7 +74,7 @@ class TestScenarioAdapterTransform:
         """Test transform with unknown event type returns empty list."""
         test_event = {
             "event_type": "unknown.event.type",  # Not in adapters dict
-            "timestamp": 1700000000,
+            "timestamp": 1767225600,
         }
 
         result = adapter.transform(test_event)
@@ -84,7 +84,7 @@ class TestScenarioAdapterTransform:
     def test_transform_with_missing_event_type(self, adapter):
         """Test transform with missing event_type key returns empty list."""
         test_event = {
-            "timestamp": 1700000000,
+            "timestamp": 1767225600,
             "data": "some data",
             # No event_type key
         }
@@ -96,7 +96,7 @@ class TestScenarioAdapterTransform:
     def test_transform_returns_list(self, adapter):
         """Test transform always returns a list."""
         # Test with known event type
-        test_event = {"event_type": "router.syslog", "timestamp": 1700000000}
+        test_event = {"event_type": "router.syslog", "timestamp": 1767225600}
 
         router_adapter = adapter.adapters["router.syslog"]
         original_transform = router_adapter.transform

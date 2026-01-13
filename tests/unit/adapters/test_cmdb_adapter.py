@@ -19,7 +19,7 @@ def _format_ts(ts: int) -> str:
 def test_cmdb_change_event_transforms_correctly(cmdb_adapter):
     event = {
         "event_type": "cmdb.change",
-        "timestamp": 1700000000,
+        "timestamp": 1767225600,
         "attributes": {"actor": "alice", "files_changed": ["file1.cfg", "file2.cfg"]},
     }
     lines = list(cmdb_adapter.transform(event))

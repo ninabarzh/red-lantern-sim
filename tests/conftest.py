@@ -61,7 +61,7 @@ def current_utc_time() -> datetime:
 def sample_bgp_update() -> dict[str, object]:
     """Sample BGP update for testing."""
     return {
-        "timestamp": 1700000000,
+        "timestamp": 1767225600,
         "prefix": "203.0.113.0/24",
         "as_path": [6939, 174, 64500],
         "origin_as": 64500,
