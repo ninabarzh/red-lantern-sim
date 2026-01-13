@@ -24,4 +24,4 @@ PyYAML==6.0.3
 ruff==0.14.10
 types-PyYAML==6.0.12.20250915
 typing_extensions==4.15.0
-virtualenv==20.36.0
+virtualenv==20.36.1
