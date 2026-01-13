@@ -15,7 +15,7 @@ for detection engineering, rule testing, and analyst training.
 * Optional background “Internet noise” for analyst realism
 * Explicitly built for blue, purple, and red-team collaboration
 
-The simulator [functions within a classic cycle of attack and defence under the Patrician's shrewd management](narrative.md).
+The simulator can [function within a classic cycle of attack and defence under the Patrician's shrewd management](narrative.md).
 
 ## Getting started (quick start)
 

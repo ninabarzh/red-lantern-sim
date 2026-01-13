@@ -14,7 +14,9 @@ It was, in their view, [begging for a gentle nudge](https://red.tymyrddin.dev/do
 
 [![Operation Red Lantern or False Horizons](https://github.com/ninabarzh/red-lantern-detection/blob/main/assets/red-lanterns.png)](https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/rose/patrician-red-line)
 
-The nudge, however, had unforeseen consequences. It was like adjusting a single, obscure valve in a steamworks only 
+The nudge, however, had 
+[unforeseen consequences](https://github.com/ninabarzh/red-lantern-sim/blob/main/examples/playbook3-practice.json). 
+It was like adjusting a single, obscure valve in a steamworks only 
 to find, three streets over, that all the red lanterns (the city’s critical signal lights for routing emergency data) 
 had begun to blink in a frantic, anarchic samba. The Semaphore had, entirely by accident, performed a rather elegant 
 'control-plane attack'. They hadn't stolen a single byte, but they had convinced the city's nervous system that a 
@@ -54,16 +56,14 @@ And so, Purple Lantern Practice Ltd. was born.
 to professionally simulate disasters so they would never actually happen. Ponder was tasked with building the 
 [red-lantern-sim](https://github.com/ninabarzh/red-lantern-sim), a theatre of digital warfare where attacks could be 
 staged without a single real packet going astray. His first recruits were his baffled, slightly chastened friends 
-from the Scarlet Semaphore. "Stop hacking the city," hr told them. "Start documenting *how* you hacked it. 
-Turn our clever accident into a 
-[scenario for the simulator](https://github.com/ninabarzh/red-lantern-sim/tree/main/simulator/scenarios)."
+from the Scarlet Semaphore. "Stop hacking the city," he told them. "Start documenting *how* we hacked it. 
+Turn our clever accident into a [scenario for the simulator](https://github.com/ninabarzh/red-lantern-sim/tree/main/simulator/scenarios)."
 
 Meanwhile, back in the mirrored halls of the Department of Silent Stability, the mood shifted. The intercepted 
 briefing was no longer a security failure; it was a requirements document. Their new mission, fed by the simulator's 
 outputs, was to [build the detection logic](https://blue.tymyrddin.dev/docs/shadows/red-lantern/detection/) that would 
 have caught the Semaphore's prank *before* the lanterns started their samba. They began crafting [elegant correlation 
-rules](https://blue.tymyrddin.dev/docs/shadows/red-lantern/correlation/), learning to distinguish the signature of a 
-mischievous "control-plane" tweak from the common noise of a faulty cable.
+rules](https://blue.tymyrddin.dev/docs/shadows/red-lantern/correlation/), learning to distinguish the signature of a mischievous "control-plane" tweak from the common noise of a faulty cable.
 
 The project became a grand, recursive loop: a controlled burn to fireproof the city. The Semaphore, now on the payroll, 
 would devise a new, ever-more cunning attack scenario in the simulator. The *red-lantern-sim* would spit out its 
