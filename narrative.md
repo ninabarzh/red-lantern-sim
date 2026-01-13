@@ -74,7 +74,7 @@ who would pour over it, writing the detection spells:
 faint shimmer in the real network traffic.
 
 It was security through immersive, sanctioned paranoia. The Patrician had converted a threat into a vaccine. The 
-Scarlet Semaphore got to be [brilliantly disruptive]((https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/bench/)) 
+Scarlet Semaphore got to be [brilliantly disruptive](https://red.tymyrddin.dev/docs/scarlet/op-red-lantern/bench/) 
 without causing a real mess. The Department of Silent Stability got a perpetual, intelligent training partner that 
 didn't require filing incident reports. And the city’s data flows continued to hum, their pathways growing more 
 resilient with every simulated catastrophe. The red lanterns now glowed with a steady, untroubled light, their brief, 
