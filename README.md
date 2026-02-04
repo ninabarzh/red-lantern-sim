@@ -206,8 +206,27 @@ pytest -v
 pytest --cov=simulator --cov-report=html
 ```
 
-## License
+## License and usage
 
-This project is released under [CC0 / public domain equivalent](https://creativecommons.org/publicdomain/zero/1.0/legalcode.en).
+This project is licensed under the [Polyform Noncommercial License](LICENSE).
 
-Meaning: Do what you want. Just do it well. 
+### What this means in practice
+
+You are welcome to use this software for:
+
+- Learning and experimentation
+- Academic or independent research
+- Defensive security research
+- Developing and validating proof-of-concepts
+- Incident response exercises
+- Non-commercial red/blue team simulations
+
+You may **not** use this software for:
+
+- Paid workshops or training
+- Consultancy or advisory services
+- Internal corporate training
+- Commercial product development
+
+If you want to use this project in a paid or commercial context, a commercial license is required.  
+See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for details.
